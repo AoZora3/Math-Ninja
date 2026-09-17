@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { stage1Presets } from '../../game/equations/stage1';
-import PresetCard from '../../components/PresetCard';
+import { stage1Presets } from '../../Game/Equations/Stage1.js';
+import PresetCard from '../../Components/PresetCards.jsx';
 import MathGraph from '../Gameplay/MathGraph';
 
 export default function EditPreset() {
