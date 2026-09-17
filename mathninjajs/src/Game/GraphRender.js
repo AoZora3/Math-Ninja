@@ -39,4 +39,4 @@ export function drawGraph(ctx, preset, range, width, height) {
     });
     ctx.stroke();
   }
-}v
+}
