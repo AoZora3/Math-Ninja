@@ -31,7 +31,7 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
   if (!preset) return null;
 
   function handleChange(id, key, value) {
-    const safeValue = Number(Number(value).toFixed(2));
+    const safeValue = Number.isFinite(Number(value)) ? Number(Number(value).toFixed(2)) : 0;
 
     setPreset((prev) => {
       if (!prev) return prev;
@@ -39,7 +39,7 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
       const next = {
         ...prev,
         coefficients: {
-          ...prev.coefficients,
+          ...(prev.coefficients || { a: 1, b: 0 }),
           [key]: safeValue
         }
       };

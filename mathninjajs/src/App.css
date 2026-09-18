@@ -75,9 +75,7 @@ SPLASH SCREEN
   box-shadow: 0 6px 0 #c49300;
   transition: 0.15s;
 }
-.start-button:hover {
-  transform: translateY(-3px);
-}
+.start-button:hover { transform: translateY(-3px); }
 .start-button:active {
   transform: translateY(3px);
   box-shadow: 0 2px 0 #c49300;
@@ -159,7 +157,6 @@ STAGE SELECT
   color: white;
   transition: 0.2s;
 }
-
 .stage-card {
   min-height: 190px;
   display: flex;
@@ -167,7 +164,6 @@ STAGE SELECT
   text-align: left;
   padding: 25px;
 }
-
 .stage-card:hover,
 .preset-card:hover {
   transform: translateY(-5px);
@@ -188,17 +184,9 @@ STAGE SELECT
   margin-right: 20px;
 }
 .stage-info h3,
-.preset-content h3 {
-  font-size: 20px;
-  margin-bottom: 10px;
-}
-
+.preset-content h3 { font-size: 20px; margin-bottom: 10px; }
 .stage-info p,
-.preset-content p {
-  color: #aebbd0;
-  line-height: 1.5;
-  margin-bottom: 18px;
-}
+.preset-content p { color: #aebbd0; line-height: 1.5; margin-bottom: 18px; }
 .play-label {
   color: #ffcc33;
   font-size: 14px;
@@ -363,16 +351,8 @@ PRESET CONTENT
   font-size: 28px;
   margin: 8px 0;
 }
-.preset-content h3 {
-  font-size: 17px;
-  margin-bottom: 8px;
-}
-
-.preset-content p {
-  min-height: 45px;
-  margin-bottom: 18px;
-}
-
+.preset-content h3 { font-size: 17px; margin-bottom: 8px; }
+.preset-content p { min-height: 45px; margin-bottom: 18px; }
 .select-button {
   padding: 10px 18px;
   border: none;
@@ -381,10 +361,7 @@ PRESET CONTENT
   color: #101827;
   font-weight: 900;
 }
-
-.select-button:hover {
-  background: #ffd85e;
-}
+.select-button:hover { background: #ffd85e; }
 
 /*
 RESPONSIVE
@@ -528,11 +505,7 @@ html, body, #root {
   z-index: 2;
 }
 
-.gameplay-hotbar {
-  padding: 10px;
-  border-radius: 14px;
-}
-
+.gameplay-hotbar { padding: 10px; border-radius: 14px; }
 .hotbar-header {
   display: flex;
   justify-content: space-between;
@@ -541,13 +514,11 @@ html, body, #root {
   letter-spacing: 1px;
   margin-bottom: 10px;
 }
-
 .hotbar-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
-
 .hotbar-button {
   border: 1px solid #374151;
   background: #1f2937;
@@ -565,39 +536,15 @@ html, body, #root {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-@media (max-width: 700px) {
-  .math-title,
-  .ninja-title {
-    font-size: 48px;
-  }
-  .ninja-character {
-    font-size: 80px;
-  }
-  .stage-grid,
-  .preset-grid {
-    grid-template-columns: 1fr;
-  }
-  .endless-card {
-    grid-column: span 1;
-  }
-  .header {
-    padding: 0 18px;
-  }
-  .stage-container,
-  .preset-container {
-    padding: 30px 15px;
-  }
-  .stage-heading h1 {
-    font-size: 30px;
-  }
-  .gameplay-shell {
-    width: 100%;
-    padding: 8px 8px 12px;
-  }
-  .score-block strong {
-    font-size: 24px;
-  }
-  .equation-badge {
-    font-size: 0.82rem;
-  }
+@media (max-width:700px){
+  .math-title,.ninja-title{font-size:48px}
+  .ninja-character{font-size:80px}
+  .stage-grid,.preset-grid{grid-template-columns:1fr}
+  .endless-card{grid-column:span 1}
+  .header{padding:0 18px}
+  .stage-container,.preset-container{padding:30px 15px}
+  .stage-heading h1{font-size:30px}
+  .gameplay-shell{width:100%;padding:8px 8px 12px}
+  .score-block strong{font-size:24px}
+  .equation-badge{font-size:.82rem}
 }

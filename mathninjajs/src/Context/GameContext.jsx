@@ -135,6 +135,7 @@ export function GameProvider({ children }) {
   return (
     <GameContext.Provider value={{
       presets,
+      setPresets,
       activePreset,
       setActivePreset,
       currentScreen,

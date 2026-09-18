@@ -6,7 +6,7 @@ export default function MathGraph({ activePreset, range = { xMin: -10, xMax: 10,
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !activePreset || typeof activePreset.fn !== 'function') return;
 
     try {
       const ctx = canvas.getContext('2d');

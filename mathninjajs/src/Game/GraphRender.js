@@ -8,8 +8,10 @@ export function toPixel(x, y, range, canvasWidth, canvasHeight) {
 // samples a preset's fn across the visible range, returns pixel points
 export function sampleCurve(preset, range, canvasWidth, canvasHeight, step = 0.1) {
   const points = [];
+  if (!preset || typeof preset.fn !== 'function') return points;
+
   for (let x = range.xMin; x <= range.xMax; x += step) {
-    const y = preset.fn(x, preset.coefficients);
+    const y = preset.fn(x, preset.coefficients || {});
     if (y === null || !Number.isFinite(y)) continue;
     if (y < range.yMin || y > range.yMax) continue;
     points.push(toPixel(x, y, range, canvasWidth, canvasHeight));
