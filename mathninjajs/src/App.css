@@ -39,18 +39,20 @@ SPLASH SCREEN
   align-items: center;
   transform: rotate(-3deg);
 }
-.math-title {
-  font-size: 70px;
-  font-weight: 900;
-  color: white;
-  letter-spacing: -4px;
-}
+.math-title,
 .ninja-title {
   font-size: 70px;
   font-weight: 900;
+  letter-spacing: -4px;
+}
+
+.math-title {
+  color: white;
+}
+
+.ninja-title {
   color: #ffcc33;
   margin-left: 12px;
-  letter-spacing: -4px;
 }
 .ninja-character {
   font-size: 110px;
@@ -149,23 +151,28 @@ STAGE SELECT
   gap: 22px;
 }
 
-.stage-card {
-  min-height: 190px;
-  display: flex;
-  align-items: flex-start;
-  text-align: left;
-  padding: 25px;
+.stage-card,
+.preset-card {
   border: 2px solid #334761;
   border-radius: 18px;
   background: #1d2b40;
   color: white;
   transition: 0.2s;
 }
-.stage-card:hover {
+
+.stage-card {
+  min-height: 190px;
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+  padding: 25px;
+}
+
+.stage-card:hover,
+.preset-card:hover {
   transform: translateY(-5px);
   border-color: #ffcc33;
-  box-shadow:
-    0 8px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 .stage-number {
   min-width: 55px;
@@ -180,11 +187,14 @@ STAGE SELECT
   font-weight: 900;
   margin-right: 20px;
 }
-.stage-info h3 {
+.stage-info h3,
+.preset-content h3 {
   font-size: 20px;
   margin-bottom: 10px;
 }
-.stage-info p {
+
+.stage-info p,
+.preset-content p {
   color: #aebbd0;
   line-height: 1.5;
   margin-bottom: 18px;
@@ -261,15 +271,6 @@ STAGE 1 PRESETS
 }
 .preset-card {
   overflow: hidden;
-  border-radius: 18px;
-  background: #1d2b40;
-  border: 2px solid #334761;
-  transition: 0.2s;
-}
-.preset-card:hover {
-  transform: translateY(-5px);
-
-  border-color: #ffcc33;
 }
 
 /*
@@ -366,12 +367,12 @@ PRESET CONTENT
   font-size: 17px;
   margin-bottom: 8px;
 }
+
 .preset-content p {
-  color: #aebbd0;
-  line-height: 1.5;
   min-height: 45px;
   margin-bottom: 18px;
 }
+
 .select-button {
   padding: 10px 18px;
   border: none;
@@ -380,6 +381,7 @@ PRESET CONTENT
   color: #101827;
   font-weight: 900;
 }
+
 .select-button:hover {
   background: #ffd85e;
 }
@@ -387,6 +389,181 @@ PRESET CONTENT
 /*
 RESPONSIVE
 */
+
+html, body, #root {
+  height: 100%;
+}
+
+.gameplay-shell {
+  width: min(100%, 480px);
+  height: 100vh;
+  margin: 0 auto;
+  padding: 12px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: linear-gradient(180deg, #0f172a 0%, #101827 100%);
+}
+
+.gameplay-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(17, 24, 39, 0.9);
+  border: 1px solid #2d3d55;
+}
+
+.score-block {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.hud-label {
+  color: #8da0ba;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.score-block strong {
+  font-size: 28px;
+  color: #f9fafb;
+}
+
+.health-block {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.health-icon {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.health-icon.filled {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff4d6d' d='M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5A4.5 4.5 0 0 1 6.5 4c1.74 0 3.41.81 4.5 2.09A6.13 6.13 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35Z'/%3E%3C/svg%3E");
+}
+
+.health-icon.empty {
+  filter: grayscale(1);
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff4d6d' d='M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5A4.5 4.5 0 0 1 6.5 4c1.74 0 3.41.81 4.5 2.09A6.13 6.13 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35Z'/%3E%3C/svg%3E");
+}
+
+.back-small-btn {
+  border: 1px solid #334761;
+  background: #1f2d3d;
+  color: white;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-weight: 700;
+}
+
+.gameplay-board-panel,
+.gameplay-hotbar {
+  background: rgba(17, 24, 39, 0.96);
+  border: 1px solid #2d3d55;
+  border-radius: 18px;
+}
+
+.gameplay-board-panel {
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.equation-badge {
+  background: #f3f4f6;
+  color: #111827;
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.gameplay-board {
+  position: relative;
+  flex: 1;
+  min-height: 250px;
+  border-radius: 14px;
+  overflow: hidden;
+  background:
+    linear-gradient(#111827 0%, #111827 100%),
+    linear-gradient(#2a3b53 1px, transparent 1px),
+    linear-gradient(90deg, #2a3b53 1px, transparent 1px);
+  background-size: auto, 26px 26px, 26px 26px;
+  background-position: center, center, center;
+  border: 1px solid #314763;
+}
+
+.graph-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.spawned-target {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  z-index: 2;
+}
+
+.gameplay-hotbar {
+  padding: 10px;
+  border-radius: 14px;
+}
+
+.hotbar-header {
+  display: flex;
+  justify-content: space-between;
+  color: #dfe7f3;
+  font-size: 11px;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.hotbar-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hotbar-button {
+  border: 1px solid #374151;
+  background: #1f2937;
+  color: #f9fafb;
+  border-radius: 10px;
+  min-height: 52px;
+  padding: 8px 10px;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.hotbar-button.selected {
+  border-color: #22c55e;
+  background: #14532d;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
 
 @media (max-width: 700px) {
   .math-title,
@@ -412,5 +589,15 @@ RESPONSIVE
   }
   .stage-heading h1 {
     font-size: 30px;
+  }
+  .gameplay-shell {
+    width: 100%;
+    padding: 8px 8px 12px;
+  }
+  .score-block strong {
+    font-size: 24px;
+  }
+  .equation-badge {
+    font-size: 0.82rem;
   }
 }
