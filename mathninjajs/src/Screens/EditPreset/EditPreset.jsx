@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { stage1Presets } from '../../Game/Equations/Stage1.js';
+import { stage1Presets } from '../../Game/Equations/StagePreset1.js';
 import PresetCard from '../../Components/PresetCards.jsx';
 import MathGraph from '../Gameplay/MathGraph';
 
