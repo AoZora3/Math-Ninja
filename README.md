@@ -3,36 +3,59 @@ CS409 - Final Project
 File Structure
 
     src/
-    ├── main.jsx
-    ├── App.jsx                        # top-level routing/screen switcher — Section 1
-    ├── router/
-    │   └── routes.js                  # frame name -> screen component map
-    ├── context/
-    │   └── GameContext.jsx            # shared game state (see contract) — Section 1
-    ├── screens/
-    │   ├── TitleScreen/                # Frame 1
-    │   │   ├── TitleScreen.jsx
-    │   │   └── TitleScreen.css
-    │   ├── LevelSelect/                # Frame 2
-    │   ├── EquationList/               # Frame 3 (displays presets, reads from game/equations/)
-    │   ├── EquationTypeSelect/         # Frame 4
-    │   ├── EditPreset/                 # Frame 5 (coefficient editing UI)
-    │   ├── Gameplay/                   # Frame 6
-    │   │   ├── Gameplay.jsx            # screen layout, ties hotbar + graph + engine together
-    │   │   ├── MathGraph.jsx           # component wrapper — renders via game/graphRenderer.js
-    │   │   ├── EquationHotbar.jsx
-    │   │   └── gameEngine.js           # game loop: spawning/timing/score, calls game/collision.js
-    │   ├── GameOver/                   # Frame 8
-    │   ├── StageComplete/              # Frame 9
-    │   └── EndlessMode/                # Frame 10
-    ├── components/                     # shared buttons, hearts, star rating, modal, BombDamage overlay
-    ├── game/
-    │   ├── equations/                  # preset data + fn() definitions (algebraic, trig, log, exp)
-    |    ├── StagePreset1    
-    │   ├── graphRenderer.js            # pure math: sampling, coordinate conversion, drawing
-    │   └── collision.js                # pure function: (preset, fruitList) -> sliced fruit
     ├── assets/
     │   ├── images/
     │   └── fonts/
-    |    └── styles/
-    |        └── globals.css
+    │   └── styles/
+    │   │    └── globals.css
+    ├── components/                     # shared buttons, hearts, star rating, modal, BombDamage overlay
+    │   └── Life.jsx
+    │   └── Timer.jsx
+    │   └── Points.jsx
+    │   └── Combo.jsx
+    │   └── Stars.jsx
+    ├── context/
+    │   └── GameContext.jsx            # shared game state (see contract) — Section 1
+    ├── game/
+    │   ├── equations/                  # preset data + fn() definitions (algebraic, trig, log, exp)
+    │   │    ├── Stage1Presets.jsx               # Stores default preset for stage 1
+    │   │    ├── Stage2Presets.jsx  
+    │   │    ├── Stage3Presets.jsx
+    │   │    ├── Stage4Presets.jsx
+    │   │    └── EndlessPresets.jsx
+    │   ├── graphRenderer.js            # pure math: sampling, coordinate conversion, drawing
+    │   └── collision.js                # pure function: (preset, fruitList) -> sliced fruit    
+    ├── router/
+    │   └── routes.js                  # frame name -> screen component map
+    ├── screens/
+    │   ├── EditPreset/                 # Frame 5 (coefficient editing UI)
+    │   │    └──　EditPreset.jsx
+    │   ├── EquationList/               # Frame 3 (displays presets, reads from game/equations/)
+    │   │    ├──Stage1.jsx
+    │   │    ├── Stage2.jsx
+    │   │    ├── Stage3.jsx
+    │   │    ├── Stage4.jsx
+    │   │    └── Endless.jsx
+    │   ├── EquationTypeSelect/         # Frame 4
+    │   │    ├── Stage1EquationType.jsx
+    │   │    ├── Stage2EquationType.jsx
+    │   │    ├──　Stage3EquationType.jsx
+    │   │    ├── Stage4EquationType.jsx
+    │   │    └── EndlessEqationType.jsx
+    │   ├── GameOver/                   # Frame 8
+    │   │    └── GameOver.jsx            #Display Stats
+    │   ├── Gameplay/                   # Frame 6
+    │   │   ├──　Gameplay.jsx            # screen layout, ties hotbar + graph + engine together
+    │   │   ├──　MathGraph.jsx           # component wrapper — renders via game/graphRenderer.js
+    │   │   └──　EquationHotbar.jsx
+    │   ├── StageComplete/              # Frame 9
+    │   │    └── StageComplete            #Display Stars, points, life, time
+    │   ├── StageSelect/                # Frame 2
+    │   │    └── StageSelect.jsx
+    │   ├── TitleScreen/                # Frame 1
+    │   │    └── TitleScreen.jsx
+    ├── App.jsx                        # top-level routing/screen switcher — Section 1
+    └── index.jsx
+    
+    
+    
