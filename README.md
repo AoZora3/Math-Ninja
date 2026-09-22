@@ -39,7 +39,7 @@ File Structure
     │   ├── EquationTypeSelect/         # Frame 4
     │   │    ├── Stage1EquationType.jsx
     │   │    ├── Stage2EquationType.jsx
-    │   │    ├──　tage3EquationType.jsx
+    │   │    ├── Stage3EquationType.jsx
     │   │    ├── Stage4EquationType.jsx
     │   │    └── EndlessEquationType.jsx
     │   ├── GameOver/                   # Frame 8
