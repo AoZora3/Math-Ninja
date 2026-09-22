@@ -39,9 +39,9 @@ File Structure
     │   ├── EquationTypeSelect/         # Frame 4
     │   │    ├── Stage1EquationType.jsx
     │   │    ├── Stage2EquationType.jsx
-    │   │    ├──　Stage3EquationType.jsx
+    │   │    ├──　tage3EquationType.jsx
     │   │    ├── Stage4EquationType.jsx
-    │   │    └── EndlessEqationType.jsx
+    │   │    └── EndlessEquationType.jsx
     │   ├── GameOver/                   # Frame 8
     │   │    └── GameOver.jsx            #Display Stats
     │   ├── Gameplay/                   # Frame 6
@@ -49,7 +49,7 @@ File Structure
     │   │   ├──　MathGraph.jsx           # component wrapper — renders via game/graphRenderer.js
     │   │   └──　EquationHotbar.jsx
     │   ├── StageComplete/              # Frame 9
-    │   │    └── StageComplete            #Display Stars, points, life, time
+    │   │    └── StageComplete.jsx            #Display Stars, points, life, time
     │   ├── StageSelect/                # Frame 2
     │   │    └── StageSelect.jsx
     │   ├── TitleScreen/                # Frame 1
