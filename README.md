@@ -64,6 +64,5 @@ src/
 
 │   └── fonts/
 
-└── styles/
-
+    └── styles/
     └── globals.css
