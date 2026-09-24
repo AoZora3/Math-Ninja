@@ -446,7 +446,8 @@ html, body, #root {
 }
 
 .gameplay-board-panel,
-.gameplay-hotbar {
+.gameplay-hotbar,
+.equation-controls {
   background: rgba(17, 24, 39, 0.96);
   border: 1px solid #2d3d55;
   border-radius: 18px;
@@ -470,6 +471,17 @@ html, body, #root {
   font-weight: 800;
   font-size: 0.95rem;
 }
+
+.equation-type {
+  display: block;
+  color: #64748b;
+  font-size: 0.68rem;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.equation-badge strong { display: block; }
 
 .gameplay-board {
   position: relative;
@@ -506,6 +518,25 @@ html, body, #root {
 }
 
 .gameplay-hotbar { padding: 10px; border-radius: 14px; }
+
+.equation-controls { padding: 14px; }
+.control-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.control-heading h2 { color: #f8fafc; font-size: 1.1rem; margin-top: 4px; }
+.type-switch, .preview-button {
+  border: 1px solid #52667f;
+  border-radius: 8px;
+  background: #26364e;
+  color: #dfe7f3;
+  padding: 8px 10px;
+  font-size: .72rem;
+  font-weight: 700;
+}
+.slider-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.coefficient-slider span { display: flex; justify-content: space-between; color: #b9c7d9; font-size: .78rem; margin-bottom: 4px; }
+.coefficient-slider output { color: #56e39f; font-weight: 800; }
+.coefficient-slider input { width: 100%; accent-color: #56e39f; }
+.fire-button { width: 100%; border: 0; border-radius: 10px; padding: 12px; background: #56e39f; color: #09251a; font-weight: 900; text-transform: uppercase; letter-spacing: .8px; }
+.fire-button:disabled { cursor: not-allowed; opacity: .5; }
 .hotbar-header {
   display: flex;
   justify-content: space-between;
@@ -519,7 +550,9 @@ html, body, #root {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
+.hotbar-entry { display: flex; min-width: 0; gap: 5px; }
 .hotbar-button {
+  flex: 1;
   border: 1px solid #374151;
   background: #1f2937;
   color: #f9fafb;
@@ -529,12 +562,13 @@ html, body, #root {
   font-weight: 700;
   font-size: 0.78rem;
 }
-
-.hotbar-button.selected {
+.hotbar-button span { display: block; color: #9ca3af; font-size: .62rem; text-transform: uppercase; margin-bottom: 3px; }
+.hotbar-entry.selected .hotbar-button {
   border-color: #22c55e;
   background: #14532d;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
+.preview-button { align-self: stretch; padding: 6px; font-size: .65rem; }
 
 @media (max-width:700px){
   .math-title,.ninja-title{font-size:48px}
@@ -547,4 +581,6 @@ html, body, #root {
   .gameplay-shell{width:100%;padding:8px 8px 12px}
   .score-block strong{font-size:24px}
   .equation-badge{font-size:.82rem}
+  .control-heading { align-items: flex-start; flex-direction: column; }
+  .type-switch { width: 100%; }
 }
