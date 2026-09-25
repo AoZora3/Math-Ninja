@@ -13,6 +13,24 @@ const buildEquationString = (preset) => {
 
   const a = Number(preset.coefficients?.a ?? 0);
   const b = Number(preset.coefficients?.b ?? 0);
+  const c = Number(preset.coefficients?.c ?? 0);
+  const d = Number(preset.coefficients?.d ?? 0);
+
+  if (preset.type === 'trigonometric') {
+    if (preset.waveType === 'classic') {
+      return `y = ${formatNumber(a)}sin(${formatNumber(b)}x)`;
+    }
+
+    if (preset.waveType === 'multi') {
+      return `y = ${formatNumber(a)}sin(${formatNumber(b)}x) + ${formatNumber(c)}sin(${formatNumber(d)}x)`;
+    }
+
+    if (preset.waveType === 'damped') {
+      return `y = ${formatNumber(a)}sin(${formatNumber(b)}x) * exp(-${formatNumber(c)}x)`;
+    }
+
+    return `y = ${formatNumber(a)}tan(${formatNumber(b)}x)`;
+  }
 
   if (preset.type === 'quadratic') {
     return `y = ${formatNumber(a)}x² ${b >= 0 ? '+' : '-'} ${formatNumber(Math.abs(b))}`;
@@ -53,11 +71,30 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
     const savedPreset = {
       ...preset,
       id: preset.id || `preset-${Date.now()}`,
-      title: preset.type === 'quadratic' ? 'QUADRATIC EQUATION' : 'LINEAR EQUATION',
+      title:
+        preset.type === 'quadratic'
+          ? 'QUADRATIC EQUATION'
+          : preset.type === 'trigonometric'
+            ? (preset.waveType === 'classic'
+                ? 'CLASSIC WAVE'
+                : preset.waveType === 'multi'
+                  ? 'MULTI-FREQUENCY'
+                  : preset.waveType === 'damped'
+                    ? 'DAMPED WAVE'
+                    : 'TELEPORTING RAMP')
+            : 'LINEAR EQUATION',
       description:
         preset.type === 'quadratic'
           ? 'A curved graph with a vertical stretch and shift.'
-          : 'A straight-line graph with adjustable slope and intercept.',
+          : preset.type === 'trigonometric'
+            ? (preset.waveType === 'classic'
+                ? 'Smooth repeating motion with a fixed ceiling and floor.'
+                : preset.waveType === 'multi'
+                  ? 'A larger wave with smaller ripples mixed together.'
+                  : preset.waveType === 'damped'
+                    ? 'A wave that fades back to rest after intense motion.'
+                    : 'A sharp climbing curve with instant discontinuities.')
+            : 'A straight-line graph with adjustable slope and intercept.',
       equation: buildEquationString(preset)
     };
 
@@ -68,7 +105,19 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
     <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
       <header className="header" style={{ marginBottom: 12 }}>
         <button className="back-button" onClick={onBack}>←</button>
-        <h2>{preset.type === 'quadratic' ? 'EDIT QUADRATIC' : 'EDIT LINEAR'}</h2>
+        <h2>{
+          preset.type === 'quadratic'
+            ? 'EDIT QUADRATIC'
+            : preset.type === 'trigonometric'
+              ? (preset.waveType === 'classic'
+                  ? 'EDIT CLASSIC WAVE'
+                  : preset.waveType === 'multi'
+                    ? 'EDIT MULTI-FREQUENCY'
+                    : preset.waveType === 'damped'
+                      ? 'EDIT DAMPED WAVE'
+                      : 'EDIT TELEPORTING RAMP')
+              : 'EDIT LINEAR'
+        }</h2>
         <div className="header-spacer"></div>
       </header>
 
@@ -82,7 +131,8 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
         background: '#f3f4f6',
         borderRadius: 8,
         fontWeight: 700,
-        textAlign: 'center'
+        textAlign: 'center',
+        color: '#111827'
       }}>
         {buildEquationString(preset)}
       </div>
