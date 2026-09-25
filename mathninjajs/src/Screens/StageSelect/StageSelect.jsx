@@ -56,19 +56,17 @@ export default function StageSelect({ screen, setScreen }) {
 
             <button
               className="stage-card unlocked"
-              onClick={() =>
-                alert("Stage 2 is coming soon!")
-              }
+              onClick={() => setScreen("stage2")}
             >
               <div className="stage-number">
                 2
               </div>
 
               <div className="stage-info">
-                <h3>LINEAR SLASH</h3>
+                <h3>TRIG WAVES</h3>
 
                 <p>
-                  Practice creating and identifying lines.
+                  Practice creating and identifying Trigonomic Functions Lines.
                 </p>
 
                 <span className="play-label">
@@ -81,19 +79,17 @@ export default function StageSelect({ screen, setScreen }) {
 
             <button
               className="stage-card unlocked"
-              onClick={() =>
-                alert("Stage 3 is coming soon!")
-              }
+              onClick={() => setScreen("stage3")}
             >
               <div className="stage-number">
                 3
               </div>
 
               <div className="stage-info">
-                <h3>QUADRATIC ATTACK</h3>
+                <h3>LOGARITHMIC ATTACK</h3>
 
                 <p>
-                  Explore curves and quadratic equations.
+                  Explore logarithmic equations.
                 </p>
 
                 <span className="play-label">
@@ -106,19 +102,17 @@ export default function StageSelect({ screen, setScreen }) {
 
             <button
               className="stage-card unlocked"
-              onClick={() =>
-                alert("Stage 4 is coming soon!")
-              }
+              onClick={() => setScreen("stage4")}
             >
               <div className="stage-number">
                 4
               </div>
 
               <div className="stage-info">
-                <h3>NINJA MASTER</h3>
+                <h3>EXPONENTIAL MASTER</h3>
 
                 <p>
-                  Put your graph skills to the ultimate test.
+                  Put your graph skills to the exponential test.
                 </p>
 
                 <span className="play-label">

@@ -1,9 +1,33 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { GameContext } from '../../Context/GameContext.jsx';
+import Combo from '../../Components/Combo.jsx';
+import Timer from '../../Components/Timer.jsx';
+import './Gameplay.css';
+
+const GAME_DURATION_SECONDS = 45;
 
 function getEquationText(preset) {
   if (!preset) return 'y = 0';
-  return preset.equation || (preset.type === 'quadratic' ? 'y = ax² + b' : 'y = ax + b');
+  const { a = 0, b = 0, h = 0, k = 0, l = 1 } = preset.coefficients || {};
+  const inversePrefix = preset.inverse ? '-' : '';
+
+  if (preset.type === 'quadratic') {
+    return `y = ${a}x² ${b < 0 ? '-' : '+'} ${Math.abs(b)}`;
+  }
+
+  if (preset.type === 'exponential') {
+    if (preset.formulaKind === 'logistic') {
+      return `y = ${inversePrefix}${l} / (1 + e^(-${b}(x - ${h})))`;
+    }
+
+    if (preset.formulaKind === 'arch') {
+      return `y = ${inversePrefix}${a}(e^(${b}(x - ${h})) + e^(-${b}(x - ${h}))) + ${k}`;
+    }
+
+    return `y = ${inversePrefix}${a}e^(-${b}(x - ${h})) + ${k}`;
+  }
+
+  return `y = ${a}x ${b < 0 ? '-' : '+'} ${Math.abs(b)}`;
 }
 
 function buildCurvePoints(preset, width = 320, height = 260) {
@@ -28,14 +52,20 @@ export default function Gameplay({ onBack }) {
     setActivePreset,
     score,
     lives,
+    timeLeft,
+    comboMultiplier,
+    streak,
     spawnedObjects,
     fireEquationStrike,
     startGameplay,
-    setCurrentScreen
+    setCurrentScreen,
+    handleCoefficientSlider
   } = useContext(GameContext);
 
   const [selectedPresetId, setSelectedPresetId] = useState(activePreset?.id || presets[0]?.id || null);
-  const resultState = score >= 100 ? 'stageComplete' : lives <= 0 ? 'gameOver' : null;
+  const [lastFiredPreset, setLastFiredPreset] = useState(activePreset || presets[0] || null);
+  const [isInverted, setIsInverted] = useState(false);
+  const resultState = score >= 100 ? 'stageComplete' : lives <= 0 || timeLeft <= 0 ? 'gameOver' : null;
 
   useEffect(() => {
     if (!selectedPresetId && presets[0]) {
@@ -48,6 +78,21 @@ export default function Gameplay({ onBack }) {
     return current || null;
   }, [presets, selectedPresetId, activePreset]);
 
+  const effectiveWeapon = useMemo(() => {
+    if (!activeWeapon || activeWeapon.type !== 'exponential') {
+      return activeWeapon;
+    }
+
+    return {
+      ...activeWeapon,
+      inverse: isInverted,
+      fn: (x, coeffs = activeWeapon.coefficients || {}) => {
+        const baseValue = activeWeapon.fn(x, coeffs);
+        return Number.isFinite(baseValue) ? (isInverted ? -baseValue : baseValue) : baseValue;
+      }
+    };
+  }, [activeWeapon, isInverted]);
+
   useEffect(() => {
     if (activeWeapon) {
       setActivePreset(activeWeapon);
@@ -57,12 +102,24 @@ export default function Gameplay({ onBack }) {
   const handleFireEquation = (preset) => {
     if (resultState) return;
 
-    const chosen = preset || activeWeapon;
+    const chosen = preset || effectiveWeapon || activeWeapon;
     if (!chosen) return;
 
     setSelectedPresetId(chosen.id);
     setActivePreset(chosen);
+    setLastFiredPreset(chosen);
     fireEquationStrike(chosen);
+  };
+
+  const handlePreviewEquation = (preset) => {
+    setSelectedPresetId(preset.id);
+    setActivePreset(preset);
+  };
+
+  const switchEquationType = () => {
+    const nextType = activeWeapon?.type === 'linear' ? 'quadratic' : 'linear';
+    const nextPreset = presets.find((preset) => preset.type === nextType);
+    if (nextPreset) handlePreviewEquation(nextPreset);
   };
 
   const handleRetry = () => {
@@ -70,7 +127,15 @@ export default function Gameplay({ onBack }) {
     setSelectedPresetId((activePreset?.id || presets[0]?.id) || null);
   };
 
-  const curvePoints = buildCurvePoints(activeWeapon || presets[0], 320, 260);
+  const liveCurvePoints = buildCurvePoints(effectiveWeapon || activeWeapon || presets[0], 320, 260);
+  const firedCurvePoints = buildCurvePoints(lastFiredPreset && lastFiredPreset.type === 'exponential' ? {
+    ...lastFiredPreset,
+    inverse: isInverted,
+    fn: (x, coeffs = lastFiredPreset.coefficients || {}) => {
+      const baseValue = lastFiredPreset.fn(x, coeffs);
+      return Number.isFinite(baseValue) ? (isInverted ? -baseValue : baseValue) : baseValue;
+    }
+  } : lastFiredPreset, 320, 260);
 
   return (
     <div className="gameplay-shell">
@@ -78,6 +143,12 @@ export default function Gameplay({ onBack }) {
         <div className="score-block">
           <span className="hud-label">SCORE</span>
           <strong>{score}/100</strong>
+        </div>
+
+        <div className="gameplay-metrics">
+          <Timer mode="countdown" seconds={timeLeft} />
+          <Timer mode="countup" seconds={GAME_DURATION_SECONDS - timeLeft} />
+          <Combo multiplier={comboMultiplier} streak={streak} />
         </div>
 
         <div className="health-block" aria-label="Health">
@@ -96,7 +167,10 @@ export default function Gameplay({ onBack }) {
       </header>
 
       <section className="gameplay-board-panel">
-        <div className="equation-badge">{getEquationText(activeWeapon)}</div>
+        <div className="equation-badge">
+          <span className="equation-type">{activeWeapon?.type || 'equation'} equation</span>
+          <strong>{getEquationText(effectiveWeapon || activeWeapon)}</strong>
+        </div>
 
         <div className="gameplay-board">
           <svg className="graph-svg" viewBox="0 0 320 260" preserveAspectRatio="xMidYMid meet" aria-label="Gameplay graph">
@@ -115,14 +189,26 @@ export default function Gameplay({ onBack }) {
               <line x1="0" y1="130" x2="320" y2="130" stroke="#dfe7f3" strokeWidth="2" />
               <line x1="160" y1="0" x2="160" y2="260" stroke="#dfe7f3" strokeWidth="2" />
 
-              {curvePoints ? (
+              {firedCurvePoints ? (
                 <polyline
-                  points={curvePoints}
+                  points={firedCurvePoints}
                   fill="none"
-                  stroke="#ffcc33"
-                  strokeWidth="3"
+                  stroke="#ff6b6b"
+                  strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  className="fired-curve"
+                />
+              ) : null}
+              {liveCurvePoints ? (
+                <polyline
+                  points={liveCurvePoints}
+                  fill="none"
+                  stroke="#56e39f"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="live-curve"
                 />
               ) : null}
             </g>
@@ -147,24 +233,67 @@ export default function Gameplay({ onBack }) {
         </div>
       </section>
 
+      <section className="equation-controls" aria-label="Equation controls">
+        <div className="control-heading">
+          <div>
+            <span className="hud-label">LIVE EQUATION</span>
+            <h2>{getEquationText(effectiveWeapon || activeWeapon)}</h2>
+          </div>
+          {activeWeapon?.type === 'exponential' ? (
+            <button type="button" className="type-switch" onClick={() => setIsInverted((prev) => !prev)}>
+              {isInverted ? 'Use normal curve' : 'Invert curve'}
+            </button>
+          ) : (
+            <button type="button" className="type-switch" onClick={switchEquationType}>
+              Switch to {activeWeapon?.type === 'linear' ? 'quadratic' : 'linear'}
+            </button>
+          )}
+        </div>
+
+        <div className="slider-list">
+          {activeWeapon && Object.keys(activeWeapon.coefficients || {}).map((key) => {
+            const [min, max] = activeWeapon.minMax?.[key] || [-5, 5];
+            const value = activeWeapon.coefficients[key];
+            return (
+              <label className="coefficient-slider" key={key}>
+                <span><b>{key}</b><output>{value}</output></span>
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  step="0.1"
+                  value={value}
+                  onChange={(event) => handleCoefficientSlider(activeWeapon.id, key, Number(event.target.value))}
+                />
+              </label>
+            );
+          })}
+        </div>
+
+        <button type="button" className="fire-button" onClick={() => handleFireEquation(effectiveWeapon || activeWeapon)} disabled={!activeWeapon || Boolean(resultState)}>
+          Fire equation
+        </button>
+      </section>
+
       <section className="gameplay-hotbar">
         <div className="hotbar-header">
           <span>HOTBAR</span>
-          <span>Tap to fire</span>
+          <span>Choose a curve to preview</span>
         </div>
 
         <div className="hotbar-grid">
           {presets.map((preset) => {
             const isSelected = preset.id === selectedPresetId;
             return (
-              <button
-                key={preset.id}
-                type="button"
-                className={`hotbar-button ${isSelected ? 'selected' : ''}`}
-                onClick={() => handleFireEquation(preset)}
-              >
-                {preset.equation || 'y = x'}
-              </button>
+              <div className={`hotbar-entry ${isSelected ? 'selected' : ''}`} key={preset.id}>
+                <button type="button" className="hotbar-button" onClick={() => handlePreviewEquation(preset)}>
+                  <span>{preset.type}</span>
+                  {getEquationText(preset)}
+                </button>
+                <button type="button" className="preview-button" onClick={() => handlePreviewEquation(preset)} aria-label={`Preview ${getEquationText(preset)}`}>
+                  Preview
+                </button>
+              </div>
             );
           })}
         </div>
@@ -197,7 +326,9 @@ export default function Gameplay({ onBack }) {
             <p style={{ marginBottom: 18, color: '#cbd5e1' }}>
               {resultState === 'stageComplete'
                 ? `You reached ${score}/100 points.`
-                : `You ran out of hearts.`}
+                : lives <= 0
+                  ? 'You ran out of hearts.'
+                  : 'Time ran out.'}
             </p>
 
             <button

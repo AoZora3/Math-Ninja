@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import { checkEquationSlice } from '../Game/Collision.js';
 import { stage1Presets } from '../Game/Equations/StagePreset1.js';
 
@@ -10,7 +10,10 @@ export function GameProvider({ children }) {
   const [currentScreen, setCurrentScreen] = useState('splash');
 
   const [score, setScore] = useState(0);
+  const scoreRef = useRef(0);
   const [lives, setLives] = useState(3);
+  const [comboMultiplier, setComboMultiplier] = useState(1);
+  const [streak, setStreak] = useState(0);
   const [timeLeft, setTimeLeft] = useState(45);
   const [spawnedObjects, setSpawnedObjects] = useState([]);
   const [highScore, setHighScore] = useState(0);
@@ -37,7 +40,10 @@ export function GameProvider({ children }) {
 
   function startGameplay() {
     setScore(0);
+    scoreRef.current = 0;
     setLives(3);
+    setComboMultiplier(1);
+    setStreak(0);
     setTimeLeft(45);
     setSpawnedObjects([]);
     setCurrentScreen('gameplay');
@@ -62,8 +68,9 @@ export function GameProvider({ children }) {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(clockTimer);
-          sendScoreToBackend(score);
-          setCurrentScreen('stageComplete');
+          const finalScore = scoreRef.current;
+          sendScoreToBackend(finalScore);
+          setCurrentScreen(finalScore >= 100 ? 'stageComplete' : 'gameOver');
           return 0;
         }
         return prev - 1;
@@ -86,17 +93,19 @@ export function GameProvider({ children }) {
       clearInterval(clockTimer);
       clearInterval(spawnerTimer);
     };
-  }, [currentScreen, score]);
+  }, [currentScreen]);
 
   function fireEquationStrike(selectedPreset = activePreset) {
     let scoreChange = 0;
     let lifeChange = 0;
+    let fruitHits = 0;
 
     const remaining = spawnedObjects.filter(obj => {
       const isHit = checkEquationSlice(obj, selectedPreset);
 
       if (isHit) {
         if (obj.type === 'fruit') {
+          fruitHits += 1;
           scoreChange += 10;
         } else if (obj.type === 'bomb') {
           lifeChange += 1;
@@ -106,9 +115,20 @@ export function GameProvider({ children }) {
       return true;
     });
 
-    if (scoreChange > 0) {
+    if (lifeChange > 0 || fruitHits === 0) {
+      setComboMultiplier(1);
+      setStreak(0);
+    } else {
+      const nextStreak = streak + fruitHits;
+      setStreak(nextStreak);
+      setComboMultiplier(nextStreak >= 6 ? 3 : nextStreak >= 3 ? 2 : 1);
+    }
+
+    const awardedScore = scoreChange * comboMultiplier;
+    if (awardedScore > 0) {
       setScore(prev => {
-        const nextScore = prev + scoreChange;
+        const nextScore = prev + awardedScore;
+        scoreRef.current = nextScore;
         if (nextScore >= 100) {
           sendScoreToBackend(nextScore);
           setCurrentScreen('stageComplete');
@@ -121,7 +141,7 @@ export function GameProvider({ children }) {
       setLives(prev => {
         const nextLives = prev - lifeChange;
         if (nextLives <= 0) {
-          sendScoreToBackend(score + scoreChange);
+          sendScoreToBackend(scoreRef.current);
           setCurrentScreen('gameOver');
           return 0;
         }
@@ -143,6 +163,8 @@ export function GameProvider({ children }) {
       score,
       lives,
       timeLeft,
+      comboMultiplier,
+      streak,
       spawnedObjects,
       highScore,
       range,

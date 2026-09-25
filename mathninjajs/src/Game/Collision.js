@@ -18,5 +18,5 @@ export function checkEquationSlice(object, preset) {
   const distance = Math.abs(evaluatedY - y);
   const xDistance = Math.abs(x);
 
-  return distance <= 2.3 && xDistance <= 10;
+  return distance <= 1 && xDistance <= 10;
 }
