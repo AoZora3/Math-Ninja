@@ -1,0 +1,360 @@
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { GameContext } from '../../Context/GameContext.jsx';
+import './Gameplay.css';
+
+function getEquationText(preset) {
+  if (!preset) return 'y = 0';
+  const { a = 0, b = 0, h = 0, k = 0, l = 1 } = preset.coefficients || {};
+  const inversePrefix = preset.inverse ? '-' : '';
+
+  if (preset.type === 'quadratic') {
+    return `y = ${a}x² ${b < 0 ? '-' : '+'} ${Math.abs(b)}`;
+  }
+
+  if (preset.type === 'exponential') {
+    if (preset.formulaKind === 'logistic') {
+      return `y = ${inversePrefix}${l} / (1 + e^(-${b}(x - ${h})))`;
+    }
+
+    if (preset.formulaKind === 'arch') {
+      return `y = ${inversePrefix}${a}(e^(${b}(x - ${h})) + e^(-${b}(x - ${h}))) + ${k}`;
+    }
+
+    return `y = ${inversePrefix}${a}e^(-${b}(x - ${h})) + ${k}`;
+  }
+
+  return `y = ${a}x ${b < 0 ? '-' : '+'} ${Math.abs(b)}`;
+}
+
+function buildCurvePoints(preset, width = 320, height = 260) {
+  if (!preset || typeof preset.fn !== 'function') return '';
+
+  const points = [];
+  for (let x = -10; x <= 10; x += 0.2) {
+    const y = preset.fn(x, preset.coefficients || {});
+    if (!Number.isFinite(y)) continue;
+    const px = ((x + 10) / 20) * width;
+    const py = height - ((y + 10) / 20) * height;
+    points.push(`${px.toFixed(2)},${py.toFixed(2)}`);
+  }
+
+  return points.join(' ');
+}
+
+export default function Gameplay({ onBack }) {
+  const {
+    presets,
+    activePreset,
+    setActivePreset,
+    score,
+    lives,
+    spawnedObjects,
+    fireEquationStrike,
+    startGameplay,
+    setCurrentScreen,
+    handleCoefficientSlider
+  } = useContext(GameContext);
+
+  const [selectedPresetId, setSelectedPresetId] = useState(activePreset?.id || presets[0]?.id || null);
+  const [lastFiredPreset, setLastFiredPreset] = useState(activePreset || presets[0] || null);
+  const [isInverted, setIsInverted] = useState(false);
+  const resultState = score >= 100 ? 'stageComplete' : lives <= 0 ? 'gameOver' : null;
+
+  useEffect(() => {
+    if (!selectedPresetId && presets[0]) {
+      setSelectedPresetId(presets[0].id);
+    }
+  }, [presets, selectedPresetId]);
+
+  const activeWeapon = useMemo(() => {
+    const current = presets.find((preset) => preset.id === selectedPresetId) || activePreset || presets[0];
+    return current || null;
+  }, [presets, selectedPresetId, activePreset]);
+
+  const effectiveWeapon = useMemo(() => {
+    if (!activeWeapon || activeWeapon.type !== 'exponential') {
+      return activeWeapon;
+    }
+
+    return {
+      ...activeWeapon,
+      inverse: isInverted,
+      fn: (x, coeffs = activeWeapon.coefficients || {}) => {
+        const baseValue = activeWeapon.fn(x, coeffs);
+        return Number.isFinite(baseValue) ? (isInverted ? -baseValue : baseValue) : baseValue;
+      }
+    };
+  }, [activeWeapon, isInverted]);
+
+  useEffect(() => {
+    if (activeWeapon) {
+      setActivePreset(activeWeapon);
+    }
+  }, [activeWeapon, setActivePreset]);
+
+  const handleFireEquation = (preset) => {
+    if (resultState) return;
+
+    const chosen = preset || effectiveWeapon || activeWeapon;
+    if (!chosen) return;
+
+    setSelectedPresetId(chosen.id);
+    setActivePreset(chosen);
+    setLastFiredPreset(chosen);
+    fireEquationStrike(chosen);
+  };
+
+  const handlePreviewEquation = (preset) => {
+    setSelectedPresetId(preset.id);
+    setActivePreset(preset);
+  };
+
+  const switchEquationType = () => {
+    const nextType = activeWeapon?.type === 'linear' ? 'quadratic' : 'linear';
+    const nextPreset = presets.find((preset) => preset.type === nextType);
+    if (nextPreset) handlePreviewEquation(nextPreset);
+  };
+
+  const handleRetry = () => {
+    startGameplay();
+    setSelectedPresetId((activePreset?.id || presets[0]?.id) || null);
+  };
+
+  const liveCurvePoints = buildCurvePoints(effectiveWeapon || activeWeapon || presets[0], 320, 260);
+  const firedCurvePoints = buildCurvePoints(lastFiredPreset && lastFiredPreset.type === 'exponential' ? {
+    ...lastFiredPreset,
+    inverse: isInverted,
+    fn: (x, coeffs = lastFiredPreset.coefficients || {}) => {
+      const baseValue = lastFiredPreset.fn(x, coeffs);
+      return Number.isFinite(baseValue) ? (isInverted ? -baseValue : baseValue) : baseValue;
+    }
+  } : lastFiredPreset, 320, 260);
+
+  return (
+    <div className="gameplay-shell">
+      <header className="gameplay-topbar">
+        <div className="score-block">
+          <span className="hud-label">SCORE</span>
+          <strong>{score}/100</strong>
+        </div>
+
+        <div className="health-block" aria-label="Health">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <span
+              key={index}
+              className={`health-icon ${index < lives ? 'filled' : 'empty'}`}
+              aria-hidden="true"
+            />
+          ))}
+        </div>
+
+        <button type="button" className="back-small-btn" onClick={onBack}>
+          Back
+        </button>
+      </header>
+
+      <section className="gameplay-board-panel">
+        <div className="equation-badge">
+          <span className="equation-type">{activeWeapon?.type || 'equation'} equation</span>
+          <strong>{getEquationText(effectiveWeapon || activeWeapon)}</strong>
+        </div>
+
+        <div className="gameplay-board">
+          <svg className="graph-svg" viewBox="0 0 320 260" preserveAspectRatio="xMidYMid meet" aria-label="Gameplay graph">
+            <g>
+              {Array.from({ length: 11 }).map((_, index) => {
+                const x = (index / 10) * 320;
+                const y = (index / 10) * 260;
+                return (
+                  <g key={`grid-${index}`}>
+                    <line x1={x} y1={0} x2={x} y2={260} stroke="#2c3a4d" strokeWidth="1" />
+                    <line x1={0} y1={y} x2={320} y2={y} stroke="#2c3a4d" strokeWidth="1" />
+                  </g>
+                );
+              })}
+
+              <line x1="0" y1="130" x2="320" y2="130" stroke="#dfe7f3" strokeWidth="2" />
+              <line x1="160" y1="0" x2="160" y2="260" stroke="#dfe7f3" strokeWidth="2" />
+
+              {firedCurvePoints ? (
+                <polyline
+                  points={firedCurvePoints}
+                  fill="none"
+                  stroke="#ff6b6b"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="fired-curve"
+                />
+              ) : null}
+              {liveCurvePoints ? (
+                <polyline
+                  points={liveCurvePoints}
+                  fill="none"
+                  stroke="#56e39f"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="live-curve"
+                />
+              ) : null}
+            </g>
+          </svg>
+
+          {spawnedObjects.map((obj) => {
+            const isFruit = obj.type === 'fruit';
+            const left = ((obj.x + 10) / 20) * 100;
+            const top = 100 - ((obj.y + 10) / 20) * 100;
+
+            return (
+              <div
+                key={obj.id}
+                className={`spawned-target ${isFruit ? 'fruit' : 'bomb'}`}
+                style={{ left: `${left}%`, top: `${top}%` }}
+                title={isFruit ? 'Apple' : 'Bomb'}
+              >
+                {isFruit ? '🍎' : '💣'}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="equation-controls" aria-label="Equation controls">
+        <div className="control-heading">
+          <div>
+            <span className="hud-label">LIVE EQUATION</span>
+            <h2>{getEquationText(effectiveWeapon || activeWeapon)}</h2>
+          </div>
+          {activeWeapon?.type === 'exponential' ? (
+            <button type="button" className="type-switch" onClick={() => setIsInverted((prev) => !prev)}>
+              {isInverted ? 'Use normal curve' : 'Invert curve'}
+            </button>
+          ) : (
+            <button type="button" className="type-switch" onClick={switchEquationType}>
+              Switch to {activeWeapon?.type === 'linear' ? 'quadratic' : 'linear'}
+            </button>
+          )}
+        </div>
+
+        <div className="slider-list">
+          {activeWeapon && Object.keys(activeWeapon.coefficients || {}).map((key) => {
+            const [min, max] = activeWeapon.minMax?.[key] || [-5, 5];
+            const value = activeWeapon.coefficients[key];
+            return (
+              <label className="coefficient-slider" key={key}>
+                <span><b>{key}</b><output>{value}</output></span>
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  step="0.1"
+                  value={value}
+                  onChange={(event) => handleCoefficientSlider(activeWeapon.id, key, Number(event.target.value))}
+                />
+              </label>
+            );
+          })}
+        </div>
+
+        <button type="button" className="fire-button" onClick={() => handleFireEquation(effectiveWeapon || activeWeapon)} disabled={!activeWeapon || Boolean(resultState)}>
+          Fire equation
+        </button>
+      </section>
+
+      <section className="gameplay-hotbar">
+        <div className="hotbar-header">
+          <span>HOTBAR</span>
+          <span>Choose a curve to preview</span>
+        </div>
+
+        <div className="hotbar-grid">
+          {presets.map((preset) => {
+            const isSelected = preset.id === selectedPresetId;
+            return (
+              <div className={`hotbar-entry ${isSelected ? 'selected' : ''}`} key={preset.id}>
+                <button type="button" className="hotbar-button" onClick={() => handlePreviewEquation(preset)}>
+                  <span>{preset.type}</span>
+                  {getEquationText(preset)}
+                </button>
+                <button type="button" className="preview-button" onClick={() => handlePreviewEquation(preset)} aria-label={`Preview ${getEquationText(preset)}`}>
+                  Preview
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {resultState && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 50,
+          padding: 16
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: 360,
+            background: '#111827',
+            border: '1px solid #334155',
+            borderRadius: 18,
+            padding: 24,
+            textAlign: 'center',
+            color: '#f8fafc'
+          }}>
+            <h2 style={{ fontSize: 32, marginBottom: 8 }}>
+              {resultState === 'stageComplete' ? 'Stage Complete!' : 'Game Over'}
+            </h2>
+            <p style={{ marginBottom: 18, color: '#cbd5e1' }}>
+              {resultState === 'stageComplete'
+                ? `You reached ${score}/100 points.`
+                : `You ran out of hearts.`}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentScreen('splash');
+                onBack();
+              }}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 10,
+                border: 'none',
+                background: '#facc15',
+                color: '#111827',
+                fontWeight: 800,
+                marginRight: 8,
+                cursor: 'pointer'
+              }}
+            >
+              Back
+            </button>
+
+            <button
+              type="button"
+              onClick={handleRetry}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 10,
+                border: 'none',
+                background: '#22c55e',
+                color: '#052e16',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
