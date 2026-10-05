@@ -6,7 +6,6 @@ Math Ninja is a React math graph game where players use equation presets to slic
 
 The app source lives in `mathninjajs/src`. Run the app scripts from the `mathninjajs` directory.
 
-```text
 mathninjajs/src/
 ├── assets/
 │   ├── images/

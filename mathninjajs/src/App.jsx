@@ -1,14 +1,18 @@
 import { useContext, useState } from "react";
 import "./App.css";
 import TitleScreen from "./Screens/TitleScreen/TitleScreen.jsx";
+
 import StageSelect from "./Screens/StageSelect/StageSelect.jsx";
 import Stage1 from "./Screens/StageSelect/Stage1.jsx";
 import Stage2 from "./Screens/StageSelect/Stage2.jsx";
 import Stage3 from "./Screens/StageSelect/Stage3.jsx";
 import Stage4 from "./Screens/StageSelect/Stage4.jsx";
+
 import EditPreset from "./Screens/EditPreset/EditPreset.jsx";
 import EquationTypeSelect from "./Screens/EquationTypeSelect/EquationTypeSelect.jsx";
+
 import Gameplay from "./Screens/Gameplay/Gameplay.jsx";
+
 import { GameContext, GameProvider } from "./Context/GameContext.jsx";
 import { stage1Presets } from "./Game/Equations/StagePreset1.js";
 import { stage2Presets } from "./Game/Equations/StagePreset2.js";
@@ -138,8 +142,14 @@ function AppContent() {
     setScreen("gameplay");
   };
 
-  if (screen === "splash") {
-    return <TitleScreen screen={screen} onStart={() => setScreen("stageSelect")} />;
+  if (screen === "splash" || screen === "settings") {
+    return (
+      <TitleScreen
+        screen={screen}
+        setScreen={setScreen}
+        onStart={() => setScreen("stageSelect")}
+      />
+    );
   }
 
   if (screen === "stageSelect") {
