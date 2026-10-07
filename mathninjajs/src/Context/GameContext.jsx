@@ -95,6 +95,7 @@ export function GameProvider({ children }) {
     };
   }, [currentScreen]);
 
+  // Fire Equation 
   function fireEquationStrike(selectedPreset = activePreset) {
     let scoreChange = 0;
     let lifeChange = 0;

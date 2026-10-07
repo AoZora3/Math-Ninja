@@ -93,6 +93,7 @@ HEADER
 */
 
 .header {
+  position: relative;
   height: 80px;
   display: flex;
   align-items: center;
@@ -102,6 +103,10 @@ HEADER
   border-bottom: 2px solid #26364e;
 }
 .header h2 {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   font-size: 23px;
 }
 .header-spacer {
@@ -121,6 +126,18 @@ HEADER
   background: #344a66;
 }
 
+.info-button {
+  width: 30px;
+  height: 30px;
+  border:none;
+  border-radius: 15px;
+  background: #26364e;
+  color: white;
+  font-size: 25px;
+}
+.info-button:hover{
+  background: #344a66;
+}
 
 /* 
 STAGE SELECT

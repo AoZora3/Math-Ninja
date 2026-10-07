@@ -1,9 +1,12 @@
-export default function StageSelect({ screen, setScreen }) {                                                                           
+import GettingStarted from "./Tutorial/GettingStarted.jsx";
+import React, { useState } from "react";
+
+export default function StageSelect({ screen, setScreen}) {   
+    const [showOnboarding, setShowOnboarding] = useState(true);   
+
     return (
       <div className="screen">
-
         <header className="header">
-
           <button
             className="back-button"
             onClick={() => setScreen("splash")}
@@ -15,10 +18,22 @@ export default function StageSelect({ screen, setScreen }) {
 
           <div className="header-spacer"></div>
 
+          <button className="info-button" 
+          onClick = {() => setShowOnboarding(true)}>
+            i
+          </button>
+          
         </header>
 
         <main className="stage-container">
-
+          
+          {showOnboarding && (
+            <GettingStarted
+              onClose={() => setShowOnboarding(false)}
+              onFinish={() => setShowOnboarding(false)}
+            />
+          )}
+        
           <h1 className="page-title">
             CHOOSE YOUR STAGE
           </h1>
@@ -145,7 +160,6 @@ export default function StageSelect({ screen, setScreen }) {
                 </span>
               </div>
             </button>
-
           </div>
 
         </main>

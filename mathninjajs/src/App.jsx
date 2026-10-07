@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import "./App.css";
+import "./Assets/Styles/App.css";
 import TitleScreen from "./Screens/TitleScreen/TitleScreen.jsx";
 
 import StageSelect from "./Screens/StageSelect/StageSelect.jsx";

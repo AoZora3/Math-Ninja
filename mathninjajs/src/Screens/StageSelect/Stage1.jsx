@@ -67,11 +67,6 @@ export default function Stage1({ setScreen, onEditPreset, onAddEquation, onConti
 
             return (
               <div className="preset-card" key={preset.id || index}>
-                <div className="preset-graph">
-                  <div className="graph-axis-x"></div>
-                  <div className="graph-axis-y"></div>
-                  <div className={`preset-line line-${index}`}></div>
-                </div>
 
                 <div className="preset-content">
                   <span className="preset-number">PRESET {index + 1}</span>
@@ -107,7 +102,11 @@ export default function Stage1({ setScreen, onEditPreset, onAddEquation, onConti
               color: "#052e16",
               fontWeight: 700,
               cursor: "pointer",
-              minWidth: 180
+              minWidth: 180,
+              position: "fixed",
+              bottom: "20px",       /* Distance from the bottom of the screen */
+              right: "auto",       /* Distance from the right of the screen */
+              zIndex: 1000,         /* Ensures it stays on top of other content */
             }}
           >
             Continue

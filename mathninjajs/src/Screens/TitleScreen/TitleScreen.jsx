@@ -1,13 +1,9 @@
-import GettingStarted from "./Tutorial/GettingStarted.jsx";
 import Settings from "./Settings/Settings.jsx";
 import "../../Assets/Styles/TitleScreenStyle.css"
-
 import { useState } from "react";
 
 function TitleScreen({ onStart, screen, setScreen }) {
-  const [showOnboarding, setShowOnboarding] = useState(true);
   const [soundVolume, setSoundVolume] = useState(50);
-  
   if (screen === "settings") {
     return (
       <Settings
@@ -43,13 +39,6 @@ function TitleScreen({ onStart, screen, setScreen }) {
         <p className="version">
           MathNinja
         </p>
-
-      {showOnboarding && (
-        <GettingStarted
-          onClose={() => setShowOnboarding(false)}
-          onFinish={() => setShowOnboarding(false)}
-        />
-      )}
 
       </div>
     );

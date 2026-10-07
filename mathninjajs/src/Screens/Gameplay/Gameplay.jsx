@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { GameContext } from '../../Context/GameContext.jsx';
 import Combo from '../../Components/Combo.jsx';
 import Timer from '../../Components/Timer.jsx';
-import './Gameplay.css';
+import '../../Assets/Styles/Gameplay.css';
 
 const GAME_DURATION_SECONDS = 45;
 
