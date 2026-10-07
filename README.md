@@ -48,5 +48,9 @@ The current implementation uses the same organization with the existing project 
 
 ## Recent Changes
 
-- Added Guide Template but still need to add stuff
-- Added Settings but the sound is not yet finished
+- Started the Sound Settings
+- Created a Getting Started Template for player's guide
+- Made the continue Button float.
+- Relocated all of CSS into Assets/Style folder
+- Removed some of the duplicate and unnessary files
+- Removed the card background preview in stage preset setup for more compact view
