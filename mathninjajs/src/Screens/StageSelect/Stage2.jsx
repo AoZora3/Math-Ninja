@@ -73,8 +73,8 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
       <main className="preset-container">
         <div className="stage-heading">
           <span>STAGE 2</span>
-          <h1>TRIG WAVES</h1>
-          <p>Choose a trig preset equation to study its graph.</p>
+          <h1>TRIGONOMETRIC WAVES</h1>
+          <p>Choose a trigonometric preset equation to study its graph.</p>
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
@@ -101,11 +101,6 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
 
             return (
               <div className="preset-card" key={preset.id || index}>
-                <div className="preset-graph">
-                  <div className="graph-axis-x"></div>
-                  <div className="graph-axis-y"></div>
-                  <div className={`preset-line line-${index}`}></div>
-                </div>
 
                 <div className="preset-content">
                   <span className="preset-number">PRESET {index + 1}</span>
@@ -141,7 +136,10 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
               color: "#052e16",
               fontWeight: 700,
               cursor: "pointer",
-              minWidth: 180
+              minWidth: 180,
+              bottom: "20px",       /* Distance from the bottom of the screen */
+              right: "auto",       /* Distance from the right of the screen */
+              zIndex: 1000,         /* Ensures it stays on top of other content */
             }}
           >
             Continue

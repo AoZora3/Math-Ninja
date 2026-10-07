@@ -10,6 +10,24 @@ test('renders the title screen', () => {
   expect(screen.getByRole('button', { name: /start/i })).toBeInTheDocument();
 });
 
+test('sound volume slider previews the sound at its current volume', () => {
+  const playSound = jest.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
+  const pauseSound = jest.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation();
+  const { unmount } = render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /close/i }));
+  fireEvent.click(screen.getByRole('button', { name: /settings/i }));
+
+  const volumeSlider = screen.getByRole('slider', { name: /sound volume/i });
+  fireEvent.change(volumeSlider, { target: { value: '35' } });
+
+  expect(screen.getByText('35%')).toBeInTheDocument();
+  expect(playSound).toHaveBeenCalled();
+  unmount();
+  playSound.mockRestore();
+  pauseSound.mockRestore();
+});
+
 test('renders preset cards safely when coefficients are missing', () => {
   expect(() => {
     render(

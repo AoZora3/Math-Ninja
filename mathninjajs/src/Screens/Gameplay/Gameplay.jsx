@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { GameContext } from '../../Context/GameContext.jsx';
 import Combo from '../../Components/Combo.jsx';
 import Timer from '../../Components/Timer.jsx';
-import './Gameplay.css';
+import '../../Assets/Styles/Gameplay.css';
 
 const GAME_DURATION_SECONDS = 45;
 
@@ -173,7 +173,7 @@ export default function Gameplay({ onBack }) {
         </div>
 
         <div className="gameplay-board">
-          <svg className="graph-svg" viewBox="0 0 320 260" preserveAspectRatio="xMidYMid meet" aria-label="Gameplay graph">
+          <svg className="graph-svg" viewBox="0 0 320 260" preserveAspectRatio="none" aria-label="Gameplay graph">
             <g>
               {Array.from({ length: 11 }).map((_, index) => {
                 const x = (index / 10) * 320;

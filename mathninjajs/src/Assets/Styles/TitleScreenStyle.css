@@ -1,0 +1,17 @@
+.settings-button {
+  padding: 17px 25px;
+  border: none;
+  border-radius: 14px;
+  background: #68655d;
+  color: #101827;
+  font-size: 22px;
+  font-weight: 900;
+  box-shadow: 0 6px 0 #7b7b7b;
+  transition: 0.15s;
+  margin-top: 20px;
+}
+.settings-button:hover { transform: translateY(-3px); }
+.settings-button:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #c49300;
+}

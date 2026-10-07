@@ -1,6 +1,21 @@
-function TitleScreen({ onStart, screen }) {
+import Settings from "./Settings/Settings.jsx";
+import "../../Assets/Styles/TitleScreenStyle.css"
+import { useState } from "react";
+
+function TitleScreen({ onStart, screen, setScreen }) {
+  const [soundVolume, setSoundVolume] = useState(50);
+  if (screen === "settings") {
+    return (
+      <Settings
+        volume={soundVolume}
+        onVolumeChange={setSoundVolume}
+        setScreen={setScreen}
+      />
+    );
+  }
+
   // =========================
-  // SPLASH SCREEN
+  // Title Screen
   // =========================
   return (
       <div className={`screen splash-screen ${screen === "splash" ? "active" : ""}`}>
@@ -18,12 +33,8 @@ function TitleScreen({ onStart, screen }) {
           Slice • Solve • Master
         </p>
 
-        <button
-          className="start-button"
-          onClick={onStart}
-        >
-          START
-        </button>
+        <button className="start-button" onClick={onStart}> START </button>
+        <button className="settings-button" onClick={() => setScreen("settings")}> SETTINGS </button>
 
         <p className="version">
           MathNinja
