@@ -71,7 +71,10 @@ export default function Gameplay({ onBack }) {
   useEffect(() => {
     if (!firedEquation) return undefined;
 
-    const timeoutId = window.setTimeout(() => setFiredEquation(null), 620);
+    const timeoutId = window.setTimeout(() => {
+      setFiredEquation(null);
+      setIsPreviewVisible(true);
+    }, 820);
     return () => window.clearTimeout(timeoutId);
   }, [firedEquation]);
 
@@ -213,6 +216,7 @@ export default function Gameplay({ onBack }) {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   className={`fired-curve ${firedEquation.preset.type}-fired`}
+                  onAnimationEnd={() => setIsPreviewVisible(true)}
                 />
               ) : null}
               {liveCurvePoints && isPreviewVisible ? (
