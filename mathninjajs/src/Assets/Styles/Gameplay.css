@@ -3,8 +3,30 @@
 }
 
 .fired-curve {
-  opacity: 0.72;
-  animation: curve-fired 420ms ease-out;
+  opacity: 0;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 4px #ff304f);
+}
+
+.linear-fired {
+  animation: linear-fired 520ms cubic-bezier(0.2, 0.75, 0.3, 1) forwards;
+}
+
+.quadratic-fired {
+  animation: quadratic-fired 520ms cubic-bezier(0.2, 0.75, 0.3, 1) forwards;
+}
+
+.trigonometric-fired {
+  animation: trigonometric-fired 520ms cubic-bezier(0.2, 0.75, 0.3, 1) forwards;
+}
+
+.logarithmic-fired {
+  animation: logarithmic-fired 520ms cubic-bezier(0.2, 0.75, 0.3, 1) forwards;
+}
+
+.exponential-fired {
+  animation: exponential-fired 520ms cubic-bezier(0.2, 0.75, 0.3, 1) forwards;
 }
 
 .gameplay-metrics {
@@ -61,12 +83,42 @@
   to { opacity: 1; stroke-width: 4; }
 }
 
-@keyframes curve-fired {
-  from { opacity: 0.1; stroke-width: 1; }
-  to { opacity: 0.72; stroke-width: 2.5; }
+@keyframes linear-fired {
+  0% { opacity: 0; stroke-dashoffset: 0; stroke-width: 7; }
+  8% { opacity: 1; }
+  78% { opacity: 1; stroke-width: 6; }
+  100% { opacity: 0; stroke-dashoffset: -0.84; stroke-width: 2; }
+}
+
+@keyframes quadratic-fired {
+  0% { opacity: 0; stroke-dashoffset: 0; stroke-width: 7; }
+  8% { opacity: 1; }
+  78% { opacity: 1; stroke-width: 6; }
+  100% { opacity: 0; stroke-dashoffset: -0.84; stroke-width: 2; }
+}
+
+@keyframes trigonometric-fired {
+  0% { opacity: 0; stroke-dashoffset: 0; stroke-width: 7; }
+  8% { opacity: 1; }
+  78% { opacity: 1; stroke-width: 6; }
+  100% { opacity: 0; stroke-dashoffset: -0.84; stroke-width: 2; }
+}
+
+@keyframes logarithmic-fired {
+  0% { opacity: 0; stroke-dashoffset: 0; stroke-width: 7; }
+  8% { opacity: 1; }
+  78% { opacity: 1; stroke-width: 6; }
+  100% { opacity: 0; stroke-dashoffset: -0.84; stroke-width: 2; }
+}
+
+@keyframes exponential-fired {
+  0% { opacity: 0; stroke-dashoffset: 0; stroke-width: 7; }
+  8% { opacity: 1; }
+  78% { opacity: 1; stroke-width: 6; }
+  100% { opacity: 0; stroke-dashoffset: -0.84; stroke-width: 2; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .live-curve,
-  .fired-curve { animation: none; }
+  .live-curve { animation: none; }
+  .fired-curve { animation: none; opacity: 1; stroke-dashoffset: 0; }
 }
