@@ -11,15 +11,17 @@ import React, { useEffect, useState } from 'react';
 export default function Timer({
   mode = 'countup',
   initialTime = 60,
+  seconds: controlledSeconds,
   isActive = true,
   onTimeUp,
   onTick,
-  seconds,
 }) {
   const [internalSeconds, setInternalSeconds] = useState(mode === 'countdown' ? initialTime : 0);
+  const isControlled = Number.isFinite(controlledSeconds);
+  const seconds = isControlled ? controlledSeconds : internalSeconds;
 
   useEffect(() => {
-    if (seconds !== undefined) return undefined;
+    if (isControlled) return undefined;
 
     let interval = null;
 
@@ -45,28 +47,30 @@ export default function Timer({
     }
 
     return () => clearInterval(interval);
-  }, [isActive, mode, initialTime, onTimeUp, onTick, seconds]);
+  }, [isActive, isControlled, mode, initialTime, onTimeUp, onTick]);
 
   const formatTime = (totalSec) => {
     const mins = Math.floor(totalSec / 60);
     const secs = totalSec % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-  const displayedSeconds = seconds ?? internalSeconds;
 
   return (
-    <div className="timer-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+    <div
+      className="timer-badge"
+      aria-label={`Time ${mode === 'countdown' ? 'remaining' : 'elapsed'} ${formatTime(seconds)}`}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+    >
       <span className="timer-label">{mode === 'countdown' ? '⏳ REMAINING' : '⏱ ELAPSED'}</span>
       <span
         className="timer-value"
-        aria-label={`${mode === 'countdown' ? 'Time remaining' : 'Time elapsed'} ${formatTime(displayedSeconds)}`}
         style={{
           fontFamily: 'monospace',
           fontWeight: 'bold',
-          color: mode === 'countdown' && displayedSeconds <= 10 ? '#e63946' : 'inherit',
+          color: mode === 'countdown' && seconds <= 10 ? '#e63946' : 'inherit',
         }}
       >
-        {formatTime(displayedSeconds)}
+        {formatTime(seconds)}
       </span>
     </div>
   );

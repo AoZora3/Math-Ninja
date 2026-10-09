@@ -2,6 +2,17 @@ import React, { useState } from "react";
 import BoardSlide from "./BoardSlider.jsx";
 import "../../../Assets/Styles/GettingStarted.css";
 import Temp from "../../../Assets/Images/TempImage.png";
+import Adjust from "../../../Assets/Images/Adjust.png";
+import FireEquation from "../../../Assets/Images/FireEquation.png";
+import GoodJob from "../../../Assets/Images/GoodJob.png";
+import Hotbar from "../../../Assets/Images/Hotbar.png";
+import Spawning from "../../../Assets/Images/Spawning.png";
+import Stages from "../../../Assets/Images/Stages.png";
+import Combo from "../../../Assets/Images/Combo.png";
+import Hearts from "../../../Assets/Images/Hearts.png";
+import Time from "../../../Assets/Images/Time.png";
+import Stars from "../../../Assets/Images/Stars.png";
+import Edit from "../../../Assets/Images/EditEquation.png";
 
 const SLIDES = [
     {
@@ -12,77 +23,77 @@ const SLIDES = [
         accentColor: "  #f76a24",
     },
     {
-        imageSrc: Temp,
+        imageSrc: Stages,
         imageAlt: "Stages",
         title: "Select a Stage",
         description: "Each Stage represent different function. Progress through Algebraic, Trigonometric, Logarithmic, and Exponential stages — each one throws new curves at you.",
         accentColor: " #f7b824",
     },
     {
-      imageSrc: Temp,
+      imageSrc: Edit,
       imageAlt: "Edit",
       title: "Edit or Add Preset Equation",
       description: "You can add or edit preset equations for you to use later.",
       accentColor:" #f7f024",
     },
     {
-      imageSrc: Temp,
+      imageSrc: Hotbar,
       imageAlt: "Hotbar",
       title: "Hotbar",
       description: "The preset equations that you save in the hotbar will be displayed at the bottom of the screen for you to use.",
       accentColor:" #71f724",
     },
     {
-      imageSrc: Temp,
+      imageSrc: Adjust,
       imageAlt: "Adjust",
       title: "Adjust Equations",
       description: "You can change the equation before you fire so that you wont accidentally hit a bomb.",
       accentColor: " #24f760",
     },
     {
-      imageSrc: Temp,
+      imageSrc: Spawning,
       imageAlt: "Objects",
       title: "Fruits and Bombs",
       description: "The fruits give you points, but watch out, the bomb will damage you and deduct your health.",
       accentColor:" #24f0f7",
     },
     {
-      imageSrc: Temp,
+      imageSrc: FireEquation,
       imageAlt: "Fire",
       title: "Fire the Equation",
       description: "Think before you fire! Look at the preview of your equation first before firing to avoid hitting a bomb.",
       accentColor:" #2455f7",
     },
     {
-      imageSrc: Temp,
+      imageSrc: Hearts,
       imageAlt: "Life",
       title: "Health",
       description: "Be aware of your life. If your life reaches 0 you will automatically lose.",
       accentColor:" #242ff7",
     },
     {
-      imageSrc: Temp,
+      imageSrc: Time,
       imageAlt: "Time",
       title: "Time",
       description: "You also need to be fast. Running out of time will also result in defeat.",
       accentColor: " #9824f7",
     },
     {
-      imageSrc: Temp,
+      imageSrc: Combo,
       imageAlt: "Combo",
       title: "Combo and Hitrate",
       description: "Hitting fruits consecutively will create a combo. Having a higher combo will give you a points multiplyer.",
       accentColor: " #d024f7",
     },
     {
-      imageSrc: Temp,
+      imageSrc: Stars,
       imageAlt: "Stars",
       title: "Stars",
       description: "Completing a stage will give you stars base on your performance. Each star represents: having more than 1 health, having at least 80% hit rate, and completing the stage within the designated time.",
       accentColor: " #f724e6",
     },
     {
-      imageSrc: Temp,
+      imageSrc: GoodJob,
       imageAlt: "GoodJob",
       title: "That is all!",
       description: "You've got the basics. Jump in, graph your first equation, and start slicing.",
