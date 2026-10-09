@@ -96,6 +96,7 @@ function AppContent() {
     presets,
     setPresets,
     setActivePreset,
+    setCurrentScreen,
     startGameplay,
     musicVolume,
     setMusicVolume,
@@ -258,7 +259,10 @@ function AppContent() {
   }
 
   if (screen === "gameplay") {
-    return <Gameplay onBack={() => setScreen(currentStage)} />;
+    return <Gameplay onBack={() => {
+      setCurrentScreen(currentStage);
+      setScreen(currentStage);
+    }} />;
   }
 
   return null;
