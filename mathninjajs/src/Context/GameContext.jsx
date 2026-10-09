@@ -42,6 +42,10 @@ export function GameProvider({ children }) {
   const [musicStarted, setMusicStarted] = useState(false);
   const backgroundMusicRef = useRef(null);
 
+  const [isEndless, setIsEndless] = useState(false);
+  const [difficultyTier, setDifficultyTier] = useState(1);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
   const range = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 };
 
   useEffect(() => {
@@ -94,7 +98,7 @@ export function GameProvider({ children }) {
     });
   }
 
-  function startGameplay() {
+  function startGameplay(modeIsEndless = false) {
     setScore(0);
     scoreRef.current = 0;
     setLives(3);
@@ -118,6 +122,22 @@ export function GameProvider({ children }) {
     }
   }
 
+  const registerMiss = () => {
+    setStreak(0);
+    setComboMultiplier(1);
+    if (isEndless) {
+      setLives(prev => {
+        const updated = prev - 1;
+        if (updated <= 0) {
+          sendScoreToBackend(scoreRef.current);
+          setCurrentScreen('gameOver');
+          return 0;
+        }
+        return updated;
+      });
+    }
+  };
+
   useEffect(() => {
     if (currentScreen !== 'gameplay') return;
 
@@ -133,6 +153,8 @@ export function GameProvider({ children }) {
         return prev - 1;
       });
     }, 1000);
+
+    const spawnInterval = isEndless ? Math.max(500, 1500 - elapsedTime * 10) : 1500;
 
     const spawnerTimer = setInterval(() => {
       const isBomb = Math.random() < 0.25;
@@ -159,7 +181,7 @@ export function GameProvider({ children }) {
       clearInterval(spawnerTimer);
       clearInterval(despawnTimer); // Stop despawn checks when gameplay ends.
     };
-  }, [currentScreen]);
+  }, [currentScreen, isEndless, elapsedTime]);
 
   // Fire Equation
   function fireEquationStrike(selectedPreset = activePreset) {
@@ -173,7 +195,8 @@ export function GameProvider({ children }) {
       if (isHit) {
         if (obj.type === 'fruit') {
           fruitHits += 1;
-          scoreChange += 10;
+          const timeBonus = isEndless ? Math.floor(Math.max(0, 5000 - (Date.now() - obj.spawnTime)) / 250) : 0;
+          scoreChange += (10 * difficultyTier + timeBonus);
         } else if (obj.type === 'bomb') {
           lifeChange += 1;
         }
@@ -193,7 +216,7 @@ export function GameProvider({ children }) {
     } else {
       const nextStreak = streak + fruitHits;
       setStreak(nextStreak);
-      setComboMultiplier(nextStreak >= 6 ? 3 : nextStreak >= 3 ? 2 : 1);
+      setComboMultiplier(1 + Math.floor(nextStreak / 5));
     }
 
     if (fruitHits > 0) playSoundEffect(sliceHitSound);
@@ -250,7 +273,13 @@ export function GameProvider({ children }) {
       range,
       handleCoefficientSlider,
       startGameplay,
-      fireEquationStrike
+      fireEquationStrike,
+      isEndless,
+      setIsEndless,
+      difficultyTier,
+      setDifficultyTier,
+      elapsedTime,
+      registerMiss
     }}>
       {children}
       <audio
