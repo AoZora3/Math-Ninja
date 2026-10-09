@@ -3,8 +3,18 @@
 }
 
 .fired-curve {
-  opacity: 0.72;
-  animation: curve-fired 420ms ease-out;
+  opacity: 0;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 4px #ff304f);
+}
+
+.linear-fired,
+.quadratic-fired,
+.trigonometric-fired,
+.logarithmic-fired,
+.exponential-fired {
+  animation: curve-slash 520ms cubic-bezier(0.2, 0.75, 0.3, 1) forwards;
 }
 
 .gameplay-metrics {
@@ -61,9 +71,11 @@
   to { opacity: 1; stroke-width: 4; }
 }
 
-@keyframes curve-fired {
-  from { opacity: 0.1; stroke-width: 1; }
-  to { opacity: 0.72; stroke-width: 2.5; }
+@keyframes curve-slash {
+  0% { opacity: 0; stroke-dashoffset: 0; stroke-width: 7; }
+  8% { opacity: 1; }
+  78% { opacity: 1; stroke-width: 6; }
+  100% { opacity: 0; stroke-dashoffset: -0.84; stroke-width: 2; }
 }
 
 @media (prefers-reduced-motion: reduce) {

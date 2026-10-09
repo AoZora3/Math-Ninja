@@ -63,9 +63,20 @@ export default function Gameplay({ onBack }) {
   } = useContext(GameContext);
 
   const [selectedPresetId, setSelectedPresetId] = useState(activePreset?.id || presets[0]?.id || null);
-  const [lastFiredPreset, setLastFiredPreset] = useState(activePreset || presets[0] || null);
+  const [firedEquation, setFiredEquation] = useState(null);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(true);
   const [isInverted, setIsInverted] = useState(false);
   const resultState = score >= 100 ? 'stageComplete' : lives <= 0 || timeLeft <= 0 ? 'gameOver' : null;
+
+  useEffect(() => {
+    if (!firedEquation) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setFiredEquation(null);
+      setIsPreviewVisible(true);
+    }, 820);
+    return () => window.clearTimeout(timeoutId);
+  }, [firedEquation]);
 
   useEffect(() => {
     if (!selectedPresetId && presets[0]) {
@@ -107,13 +118,18 @@ export default function Gameplay({ onBack }) {
 
     setSelectedPresetId(chosen.id);
     setActivePreset(chosen);
-    setLastFiredPreset(chosen);
+    setIsPreviewVisible(false);
+    setFiredEquation((current) => ({
+      preset: chosen,
+      id: (current?.id || 0) + 1
+    }));
     fireEquationStrike(chosen);
   };
 
   const handlePreviewEquation = (preset) => {
     setSelectedPresetId(preset.id);
     setActivePreset(preset);
+    setIsPreviewVisible(true);
   };
 
   const switchEquationType = () => {
@@ -128,14 +144,7 @@ export default function Gameplay({ onBack }) {
   };
 
   const liveCurvePoints = buildCurvePoints(effectiveWeapon || activeWeapon || presets[0], 320, 260);
-  const firedCurvePoints = buildCurvePoints(lastFiredPreset && lastFiredPreset.type === 'exponential' ? {
-    ...lastFiredPreset,
-    inverse: isInverted,
-    fn: (x, coeffs = lastFiredPreset.coefficients || {}) => {
-      const baseValue = lastFiredPreset.fn(x, coeffs);
-      return Number.isFinite(baseValue) ? (isInverted ? -baseValue : baseValue) : baseValue;
-    }
-  } : lastFiredPreset, 320, 260);
+  const firedCurvePoints = buildCurvePoints(firedEquation?.preset, 320, 260);
 
   return (
     <div className="gameplay-shell">
@@ -174,6 +183,13 @@ export default function Gameplay({ onBack }) {
 
         <div className="gameplay-board">
           <svg className="graph-svg" viewBox="0 0 320 260" preserveAspectRatio="none" aria-label="Gameplay graph">
+            <defs>
+              <linearGradient id="slash-fade" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="320" y2="0">
+                <stop offset="0%" stopColor="#ff304f" stopOpacity="0" />
+                <stop offset="55%" stopColor="#ff304f" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#ff304f" stopOpacity="1" />
+              </linearGradient>
+            </defs>
             <g>
               {Array.from({ length: 11 }).map((_, index) => {
                 const x = (index / 10) * 320;
@@ -191,16 +207,19 @@ export default function Gameplay({ onBack }) {
 
               {firedCurvePoints ? (
                 <polyline
+                  key={firedEquation.id}
                   points={firedCurvePoints}
+                  pathLength="1"
                   fill="none"
-                  stroke="#ff6b6b"
+                  stroke="url(#slash-fade)"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="fired-curve"
+                  className={`fired-curve ${firedEquation.preset.type}-fired`}
+                  onAnimationEnd={() => setIsPreviewVisible(true)}
                 />
               ) : null}
-              {liveCurvePoints ? (
+              {liveCurvePoints && isPreviewVisible ? (
                 <polyline
                   points={liveCurvePoints}
                   fill="none"
@@ -289,9 +308,6 @@ export default function Gameplay({ onBack }) {
                 <button type="button" className="hotbar-button" onClick={() => handlePreviewEquation(preset)}>
                   <span>{preset.type}</span>
                   {getEquationText(preset)}
-                </button>
-                <button type="button" className="preview-button" onClick={() => handlePreviewEquation(preset)} aria-label={`Preview ${getEquationText(preset)}`}>
-                  Preview
                 </button>
               </div>
             );

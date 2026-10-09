@@ -4,6 +4,9 @@ import { stage1Presets } from '../Game/Equations/StagePreset1.js';
 import backgroundMusic from '../Assets/SoundEffects/MathNinjaBGM.mp3';
 
 export const GameContext = createContext(null);
+const MAX_OBJECTS_PER_TYPE = 6; // Limit active fruit and bombs independently.
+const OBJECT_LIFETIME_MS = 5000; // Despawn each object after about five seconds.
+const DESPAWN_CHECK_INTERVAL_MS = 250; // Check often so expiry stays close to five seconds.
 
 export function GameProvider({ children }) {
   const [presets, setPresets] = useState(stage1Presets);
@@ -104,16 +107,25 @@ export function GameProvider({ children }) {
         type: isBomb ? 'bomb' : 'fruit',
         spawnTime: Date.now()
       };
-      setSpawnedObjects(prev => [...prev, newObject]);
+      setSpawnedObjects(prev => {
+        const activeObjects = prev.filter(obj => Date.now() - obj.spawnTime < OBJECT_LIFETIME_MS); // Drop expired objects during spawning too.
+        const sameTypeCount = activeObjects.filter(obj => obj.type === newObject.type).length;
+        return sameTypeCount >= MAX_OBJECTS_PER_TYPE ? activeObjects : [...activeObjects, newObject]; // Keep at most six of each type.
+      });
     }, 1500);
+
+    const despawnTimer = setInterval(() => {
+      setSpawnedObjects(prev => prev.filter(obj => Date.now() - obj.spawnTime < OBJECT_LIFETIME_MS)); // Despawn objects once they reach five seconds old.
+    }, DESPAWN_CHECK_INTERVAL_MS);
 
     return () => {
       clearInterval(clockTimer);
       clearInterval(spawnerTimer);
+      clearInterval(despawnTimer); // Stop despawn checks when gameplay ends.
     };
   }, [currentScreen]);
 
-  // Fire Equation 
+  // Fire Equation
   function fireEquationStrike(selectedPreset = activePreset) {
     let scoreChange = 0;
     let lifeChange = 0;

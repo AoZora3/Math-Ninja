@@ -79,3 +79,25 @@ test('stage 4 starts gameplay with the timer and combo HUD', () => {
   expect(screen.getByLabelText('Time elapsed 00:00')).toBeInTheDocument();
   expect(screen.getByLabelText('1 times multiplier, 0 hit streak')).toBeInTheDocument();
 });
+
+test('firing an equation animates a slash and restores the live preview', () => {
+  const playSound = jest.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
+  const pauseSound = jest.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation();
+  const { container, unmount } = render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /start/i }));
+  fireEvent.click(screen.getByRole('button', { name: /exponential master/i }));
+  fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+  fireEvent.click(screen.getByRole('button', { name: /fire equation/i }));
+
+  const firedCurve = container.querySelector('.fired-curve.exponential-fired');
+  expect(firedCurve).toBeInTheDocument();
+  expect(container.querySelector('.live-curve')).not.toBeInTheDocument();
+
+  fireEvent.animationEnd(firedCurve);
+  expect(container.querySelector('.live-curve')).toBeInTheDocument();
+
+  unmount();
+  playSound.mockRestore();
+  pauseSound.mockRestore();
+});
