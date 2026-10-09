@@ -21,6 +21,10 @@ export function GameProvider({ children }) {
   const [musicVolume, setMusicVolume] = useState(50);
   const backgroundMusicRef = useRef(null);
 
+  const [isEndless, setIsEndless] = useState(false);
+  const [difficultyTier, setDifficultyTier] = useState(1);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
   const range = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 };
 
   useEffect(() => {
@@ -56,13 +60,16 @@ export function GameProvider({ children }) {
     });
   }
 
-  function startGameplay() {
+  function startGameplay(modeIsEndless = false) {
     setScore(0);
     scoreRef.current = 0;
     setLives(3);
     setComboMultiplier(1);
     setStreak(0);
     setTimeLeft(45);
+    setElapsedTime(0);
+    setIsEndless(modeIsEndless);
+    setDifficultyTier(1);
     setSpawnedObjects([]);
     setCurrentScreen('gameplay');
   }
@@ -79,21 +86,48 @@ export function GameProvider({ children }) {
     }
   }
 
+  const registerMiss = () => {
+    setStreak(0);
+    setComboMultiplier(1);
+    if (isEndless) {
+      setLives(prev => {
+        const updated = prev - 1;
+        if (updated <= 0) {
+          sendScoreToBackend(scoreRef.current);
+          setCurrentScreen('gameOver');
+          return 0;
+        }
+        return updated;
+      });
+    }
+  };
+
   useEffect(() => {
     if (currentScreen !== 'gameplay') return;
 
     const clockTimer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(clockTimer);
-          const finalScore = scoreRef.current;
-          sendScoreToBackend(finalScore);
-          setCurrentScreen(finalScore >= 100 ? 'stageComplete' : 'gameOver');
-          return 0;
-        }
-        return prev - 1;
-      });
+      if (isEndless) {
+        setElapsedTime(prev => {
+          const nextTime = prev + 1;
+          if (nextTime > 90) setDifficultyTier(3);
+          else if (nextTime > 30) setDifficultyTier(2);
+          return nextTime;
+        });
+      } else {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(clockTimer);
+            const finalScore = scoreRef.current;
+            sendScoreToBackend(finalScore);
+            setCurrentScreen(finalScore >= 100 ? 'stageComplete' : 'gameOver');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
     }, 1000);
+
+    const spawnInterval = isEndless ? Math.max(500, 1500 - elapsedTime * 10) : 1500;
 
     const spawnerTimer = setInterval(() => {
       const isBomb = Math.random() < 0.25;
@@ -105,15 +139,14 @@ export function GameProvider({ children }) {
         spawnTime: Date.now()
       };
       setSpawnedObjects(prev => [...prev, newObject]);
-    }, 1500);
+    }, spawnInterval);
 
     return () => {
       clearInterval(clockTimer);
       clearInterval(spawnerTimer);
     };
-  }, [currentScreen]);
+  }, [currentScreen, isEndless, elapsedTime]);
 
-  // Fire Equation 
   function fireEquationStrike(selectedPreset = activePreset) {
     let scoreChange = 0;
     let lifeChange = 0;
@@ -125,7 +158,8 @@ export function GameProvider({ children }) {
       if (isHit) {
         if (obj.type === 'fruit') {
           fruitHits += 1;
-          scoreChange += 10;
+          const timeBonus = isEndless ? Math.floor(Math.max(0, 5000 - (Date.now() - obj.spawnTime)) / 250) : 0;
+          scoreChange += (10 * difficultyTier + timeBonus);
         } else if (obj.type === 'bomb') {
           lifeChange += 1;
         }
@@ -140,7 +174,7 @@ export function GameProvider({ children }) {
     } else {
       const nextStreak = streak + fruitHits;
       setStreak(nextStreak);
-      setComboMultiplier(nextStreak >= 6 ? 3 : nextStreak >= 3 ? 2 : 1);
+      setComboMultiplier(1 + Math.floor(nextStreak / 5));
     }
 
     const awardedScore = scoreChange * comboMultiplier;
@@ -148,7 +182,7 @@ export function GameProvider({ children }) {
       setScore(prev => {
         const nextScore = prev + awardedScore;
         scoreRef.current = nextScore;
-        if (nextScore >= 100) {
+        if (!isEndless && nextScore >= 100) {
           sendScoreToBackend(nextScore);
           setCurrentScreen('stageComplete');
         }
@@ -192,7 +226,13 @@ export function GameProvider({ children }) {
       range,
       handleCoefficientSlider,
       startGameplay,
-      fireEquationStrike
+      fireEquationStrike,
+      isEndless,
+      setIsEndless,
+      difficultyTier,
+      setDifficultyTier,
+      elapsedTime,
+      registerMiss
     }}>
       {children}
       <audio
