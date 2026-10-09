@@ -569,7 +569,7 @@ textarea::placeholder {
 .equation-controls { padding: 14px; }
 .control-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .control-heading h2 { color: #f8fafc; font-size: 1.1rem; margin-top: 4px; }
-.type-switch, .preview-button {
+.type-switch {
   border: 1px solid #52667f;
   border-radius: 8px;
   background: #26364e;
@@ -615,8 +615,6 @@ textarea::placeholder {
   background: #14532d;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
-.preview-button { align-self: stretch; padding: 6px; font-size: .65rem; }
-
 @media (max-width:700px){
   .math-title,.ninja-title{font-size:48px}
   .ninja-character{font-size:80px}

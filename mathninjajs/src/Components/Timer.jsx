@@ -11,18 +11,23 @@ import React, { useEffect, useState } from 'react';
 export default function Timer({
   mode = 'countup',
   initialTime = 60,
+  seconds: controlledSeconds,
   isActive = true,
   onTimeUp,
   onTick,
 }) {
-  const [seconds, setSeconds] = useState(mode === 'countdown' ? initialTime : 0);
+  const [internalSeconds, setInternalSeconds] = useState(mode === 'countdown' ? initialTime : 0);
+  const isControlled = Number.isFinite(controlledSeconds);
+  const seconds = isControlled ? controlledSeconds : internalSeconds;
 
   useEffect(() => {
+    if (isControlled) return undefined;
+
     let interval = null;
 
     if (isActive) {
       interval = setInterval(() => {
-        setSeconds((prev) => {
+        setInternalSeconds((prev) => {
           if (mode === 'countdown') {
             if (prev <= 1) {
               clearInterval(interval);
@@ -42,7 +47,7 @@ export default function Timer({
     }
 
     return () => clearInterval(interval);
-  }, [isActive, mode, initialTime, onTimeUp, onTick]);
+  }, [isActive, isControlled, mode, initialTime, onTimeUp, onTick]);
 
   const formatTime = (totalSec) => {
     const mins = Math.floor(totalSec / 60);
@@ -51,7 +56,11 @@ export default function Timer({
   };
 
   return (
-    <div className="timer-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+    <div
+      className="timer-badge"
+      aria-label={`Time ${mode === 'countdown' ? 'remaining' : 'elapsed'} ${formatTime(seconds)}`}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+    >
       <span className="timer-label">{mode === 'countdown' ? '⏳ REMAINING' : '⏱ ELAPSED'}</span>
       <span
         className="timer-value"

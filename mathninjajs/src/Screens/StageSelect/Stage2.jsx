@@ -137,6 +137,7 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
               fontWeight: 700,
               cursor: "pointer",
               minWidth: 180,
+              position: "fixed",
               bottom: "20px",       /* Distance from the bottom of the screen */
               right: "auto",       /* Distance from the right of the screen */
               zIndex: 1000,         /* Ensures it stays on top of other content */

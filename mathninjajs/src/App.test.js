@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import App from './App';
 import PresetCard from './Components/PresetCards.jsx';
 import { stage2Presets } from './Game/Equations/StagePreset2.js';
+import { calculateStars } from './Screens/StageResult/StageResult.jsx';
 
 test('renders the title screen', () => {
   render(<App />);
@@ -9,6 +10,41 @@ test('renders the title screen', () => {
   expect(screen.getByRole('heading', { name: /^MATH$/i })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: /start/i })).toBeInTheDocument();
 });
+
+test('waits for the splash start button before playing title music', () => {
+  const playSound = jest.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
+  const { unmount } = render(<App />);
+
+  expect(playSound).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: /start/i }));
+  expect(playSound).toHaveBeenCalled();
+
+  unmount();
+  playSound.mockRestore();
+});
+
+test('controlled countdown reflects a round restart from zero to full time', () => {
+  const { rerender } = render(<Timer mode="countdown" seconds={0} />);
+
+  expect(screen.getByLabelText('Time remaining 00:00')).toBeInTheDocument();
+
+  rerender(<Timer mode="countdown" seconds={45} />);
+
+  expect(screen.getByLabelText('Time remaining 00:45')).toBeInTheDocument();
+});
+
+test('menu buttons play a click sound', () => {
+  const playSound = jest.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
+  const { unmount } = render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /settings/i }));
+
+  expect(playSound).toHaveBeenCalledTimes(1);
+
+  unmount();
+  playSound.mockRestore();
+});
+
 
 test('settings open as an overlay without replacing the title screen', () => {
   const pauseSound = jest.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation();
@@ -75,7 +111,79 @@ test('stage 4 starts gameplay with the timer and combo HUD', () => {
 
   fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
-  expect(screen.getByLabelText('Time remaining 00:45')).toBeInTheDocument();
+  expect(screen.getByLabelText('Time remaining 03:00')).toBeInTheDocument();
   expect(screen.getByLabelText('Time elapsed 00:00')).toBeInTheDocument();
   expect(screen.getByLabelText('1 times multiplier, 0 hit streak')).toBeInTheDocument();
+});
+
+test('stars reflect health, hit rate, and the two-minute goal threshold', () => {
+  expect(calculateStars({ won: true, lives: 2, hitRate: 80, elapsedSeconds: 120 })).toBe(3);
+  expect(calculateStars({ won: true, lives: 1, hitRate: 79.9, elapsedSeconds: 121 })).toBe(0);
+  expect(calculateStars({ won: false, lives: 3, hitRate: 100, elapsedSeconds: 60 })).toBe(0);
+});
+
+test('firing an equation animates a slash and restores the live preview', () => {
+  const playSound = jest.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
+  const pauseSound = jest.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation();
+  const { container, unmount } = render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /start/i }));
+  fireEvent.click(screen.getByRole('button', { name: /exponential master/i }));
+  fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+  fireEvent.click(screen.getByRole('button', { name: /fire equation/i }));
+
+  const firedCurve = container.querySelector('.fired-curve.exponential-fired');
+  expect(firedCurve).toBeInTheDocument();
+  expect(container.querySelector('.live-curve')).not.toBeInTheDocument();
+
+  fireEvent.animationEnd(firedCurve);
+  expect(container.querySelector('.live-curve')).toBeInTheDocument();
+
+  unmount();
+  playSound.mockRestore();
+  pauseSound.mockRestore();
+});
+
+
+test('repeated miss effects use separate audio players so they can overlap', () => {
+  const playedPlayers = [];
+  const playSound = jest.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(function () {
+    playedPlayers.push(this);
+    return Promise.resolve();
+  });
+  const { unmount } = render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /start/i }));
+  fireEvent.click(screen.getByRole('button', { name: /exponential master/i }));
+  fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+  playSound.mockClear();
+  playedPlayers.length = 0;
+
+  const fireButton = screen.getByRole('button', { name: /fire equation/i });
+  fireEvent.click(fireButton);
+  fireEvent.click(fireButton);
+
+  expect(playSound).toHaveBeenCalledTimes(2);
+  expect(playedPlayers[0]).not.toBe(playedPlayers[1]);
+
+  unmount();
+  playSound.mockRestore();
+});
+
+test('backing out of gameplay resumes title music', () => {
+  const playSound = jest.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
+  const { unmount } = render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /start/i }));
+  fireEvent.click(screen.getByRole('button', { name: /exponential master/i }));
+  fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+  playSound.mockClear();
+
+  fireEvent.click(screen.getByRole('button', { name: /^back$/i }));
+
+  expect(playSound).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('heading', { name: /exponential functions/i })).toBeInTheDocument();
+
+  unmount();
+  playSound.mockRestore();
 });
