@@ -14,15 +14,18 @@ export default function Timer({
   isActive = true,
   onTimeUp,
   onTick,
+  seconds,
 }) {
-  const [seconds, setSeconds] = useState(mode === 'countdown' ? initialTime : 0);
+  const [internalSeconds, setInternalSeconds] = useState(mode === 'countdown' ? initialTime : 0);
 
   useEffect(() => {
+    if (seconds !== undefined) return undefined;
+
     let interval = null;
 
     if (isActive) {
       interval = setInterval(() => {
-        setSeconds((prev) => {
+        setInternalSeconds((prev) => {
           if (mode === 'countdown') {
             if (prev <= 1) {
               clearInterval(interval);
@@ -42,26 +45,28 @@ export default function Timer({
     }
 
     return () => clearInterval(interval);
-  }, [isActive, mode, initialTime, onTimeUp, onTick]);
+  }, [isActive, mode, initialTime, onTimeUp, onTick, seconds]);
 
   const formatTime = (totalSec) => {
     const mins = Math.floor(totalSec / 60);
     const secs = totalSec % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+  const displayedSeconds = seconds ?? internalSeconds;
 
   return (
     <div className="timer-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
       <span className="timer-label">{mode === 'countdown' ? '⏳ REMAINING' : '⏱ ELAPSED'}</span>
       <span
         className="timer-value"
+        aria-label={`${mode === 'countdown' ? 'Time remaining' : 'Time elapsed'} ${formatTime(displayedSeconds)}`}
         style={{
           fontFamily: 'monospace',
           fontWeight: 'bold',
-          color: mode === 'countdown' && seconds <= 10 ? '#e63946' : 'inherit',
+          color: mode === 'countdown' && displayedSeconds <= 10 ? '#e63946' : 'inherit',
         }}
       >
-        {formatTime(seconds)}
+        {formatTime(displayedSeconds)}
       </span>
     </div>
   );

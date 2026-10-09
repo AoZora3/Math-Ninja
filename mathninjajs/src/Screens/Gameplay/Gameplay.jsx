@@ -2,9 +2,9 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { GameContext } from '../../Context/GameContext.jsx';
 import Combo from '../../Components/Combo.jsx';
 import Timer from '../../Components/Timer.jsx';
+import StageResult from '../StageResult/StageResult.jsx';
+import { GAME_DURATION_SECONDS, GOAL_SCORE } from '../../Context/GameContext.jsx';
 import '../../Assets/Styles/Gameplay.css';
-
-const GAME_DURATION_SECONDS = 45;
 
 function getEquationText(preset) {
   if (!preset) return 'y = 0';
@@ -53,12 +53,12 @@ export default function Gameplay({ onBack }) {
     score,
     lives,
     timeLeft,
+    hitRate,
     comboMultiplier,
     streak,
     spawnedObjects,
     fireEquationStrike,
     startGameplay,
-    setCurrentScreen,
     handleCoefficientSlider
   } = useContext(GameContext);
 
@@ -66,7 +66,7 @@ export default function Gameplay({ onBack }) {
   const [firedEquation, setFiredEquation] = useState(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(true);
   const [isInverted, setIsInverted] = useState(false);
-  const resultState = score >= 100 ? 'stageComplete' : lives <= 0 || timeLeft <= 0 ? 'gameOver' : null;
+  const resultState = lives <= 0 || timeLeft <= 0 ? 'lost' : score >= GOAL_SCORE ? 'won' : null;
 
   useEffect(() => {
     if (!firedEquation) return undefined;
@@ -146,12 +146,26 @@ export default function Gameplay({ onBack }) {
   const liveCurvePoints = buildCurvePoints(effectiveWeapon || activeWeapon || presets[0], 320, 260);
   const firedCurvePoints = buildCurvePoints(firedEquation?.preset, 320, 260);
 
+  if (resultState) {
+    return (
+      <StageResult
+        won={resultState === 'won'}
+        score={score}
+        lives={lives}
+        hitRate={hitRate}
+        elapsedSeconds={GAME_DURATION_SECONDS - timeLeft}
+        onRetry={handleRetry}
+        onBack={onBack}
+      />
+    );
+  }
+
   return (
     <div className="gameplay-shell">
       <header className="gameplay-topbar">
         <div className="score-block">
           <span className="hud-label">SCORE</span>
-          <strong>{score}/100</strong>
+          <strong>{score}/{GOAL_SCORE}</strong>
         </div>
 
         <div className="gameplay-metrics">
@@ -315,76 +329,6 @@ export default function Gameplay({ onBack }) {
         </div>
       </section>
 
-      {resultState && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(15, 23, 42, 0.75)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 50,
-          padding: 16
-        }}>
-          <div style={{
-            width: '100%',
-            maxWidth: 360,
-            background: '#111827',
-            border: '1px solid #334155',
-            borderRadius: 18,
-            padding: 24,
-            textAlign: 'center',
-            color: '#f8fafc'
-          }}>
-            <h2 style={{ fontSize: 32, marginBottom: 8 }}>
-              {resultState === 'stageComplete' ? 'Stage Complete!' : 'Game Over'}
-            </h2>
-            <p style={{ marginBottom: 18, color: '#cbd5e1' }}>
-              {resultState === 'stageComplete'
-                ? `You reached ${score}/100 points.`
-                : lives <= 0
-                  ? 'You ran out of hearts.'
-                  : 'Time ran out.'}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                setCurrentScreen('splash');
-                onBack();
-              }}
-              style={{
-                padding: '10px 16px',
-                borderRadius: 10,
-                border: 'none',
-                background: '#facc15',
-                color: '#111827',
-                fontWeight: 800,
-                marginRight: 8,
-                cursor: 'pointer'
-              }}
-            >
-              Back
-            </button>
-
-            <button
-              type="button"
-              onClick={handleRetry}
-              style={{
-                padding: '10px 16px',
-                borderRadius: 10,
-                border: 'none',
-                background: '#22c55e',
-                color: '#052e16',
-                fontWeight: 800,
-                cursor: 'pointer'
-              }}
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

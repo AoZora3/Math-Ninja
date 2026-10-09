@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import App from './App';
 import PresetCard from './Components/PresetCards.jsx';
 import { stage2Presets } from './Game/Equations/StagePreset2.js';
+import { calculateStars } from './Screens/StageResult/StageResult.jsx';
 
 test('renders the title screen', () => {
   render(<App />);
@@ -75,9 +76,15 @@ test('stage 4 starts gameplay with the timer and combo HUD', () => {
 
   fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
-  expect(screen.getByLabelText('Time remaining 00:45')).toBeInTheDocument();
+  expect(screen.getByLabelText('Time remaining 03:00')).toBeInTheDocument();
   expect(screen.getByLabelText('Time elapsed 00:00')).toBeInTheDocument();
   expect(screen.getByLabelText('1 times multiplier, 0 hit streak')).toBeInTheDocument();
+});
+
+test('stars reflect health, hit rate, and the two-minute goal threshold', () => {
+  expect(calculateStars({ won: true, lives: 2, hitRate: 80, elapsedSeconds: 120 })).toBe(3);
+  expect(calculateStars({ won: true, lives: 1, hitRate: 79.9, elapsedSeconds: 121 })).toBe(0);
+  expect(calculateStars({ won: false, lives: 3, hitRate: 100, elapsedSeconds: 60 })).toBe(0);
 });
 
 test('firing an equation animates a slash and restores the live preview', () => {
