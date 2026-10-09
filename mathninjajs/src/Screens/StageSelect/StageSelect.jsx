@@ -1,9 +1,6 @@
 import GettingStarted from "./Tutorial/GettingStarted.jsx";
-import React, { useState } from "react";
 
-export default function StageSelect({ screen, setScreen}) {   
-    const [showOnboarding, setShowOnboarding] = useState(true);   
-
+export default function StageSelect({ screen, setScreen, showOnboarding, setShowOnboarding}) {
     return (
       <div className="screen">
         <header className="header">

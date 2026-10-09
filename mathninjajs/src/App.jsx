@@ -92,10 +92,19 @@ function createPresetByType(type) {
 }
 
 function AppContent() {
-  const { presets, setPresets, setActivePreset, startGameplay } = useContext(GameContext);
+  const {
+    presets,
+    setPresets,
+    setActivePreset,
+    startGameplay,
+    musicVolume,
+    setMusicVolume,
+    startBackgroundMusic
+  } = useContext(GameContext);
   const [screen, setScreen] = useState("splash");
   const [editingPreset, setEditingPreset] = useState(null);
   const [currentStage, setCurrentStage] = useState("stage1");
+  const [showGettingStarted, setShowGettingStarted] = useState(true);
 
   const goToStage = (stageName) => {
     const nextPresets =
@@ -147,13 +156,25 @@ function AppContent() {
       <TitleScreen
         screen={screen}
         setScreen={setScreen}
-        onStart={() => setScreen("stageSelect")}
+        musicVolume={musicVolume}
+        onMusicVolumeChange={setMusicVolume}
+        onStart={() => {
+          startBackgroundMusic();
+          setScreen("stageSelect");
+        }}
       />
     );
   }
 
   if (screen === "stageSelect") {
-    return <StageSelect screen={screen} setScreen={goToStage} />;
+    return (
+      <StageSelect
+        screen={screen}
+        setScreen={goToStage}
+        showOnboarding={showGettingStarted}
+        setShowOnboarding={setShowGettingStarted}
+      />
+    );
   }
 
   if (screen === "stage1") {
@@ -164,6 +185,7 @@ function AppContent() {
         onEditPreset={openEditPreset}
         onAddEquation={() => setScreen("selectEquationType")}
         onContinue={handleContinue}
+        
       />
     );
   }

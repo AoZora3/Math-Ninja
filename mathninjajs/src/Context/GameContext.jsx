@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import { checkEquationSlice } from '../Game/Collision.js';
 import { stage1Presets } from '../Game/Equations/StagePreset1.js';
+import backgroundMusic from '../Assets/SoundEffects/MathNinjaBGM.mp3';
 
 export const GameContext = createContext(null);
 
@@ -17,8 +18,25 @@ export function GameProvider({ children }) {
   const [timeLeft, setTimeLeft] = useState(45);
   const [spawnedObjects, setSpawnedObjects] = useState([]);
   const [highScore, setHighScore] = useState(0);
+  const [musicVolume, setMusicVolume] = useState(50);
+  const backgroundMusicRef = useRef(null);
 
   const range = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 };
+
+  useEffect(() => {
+    if (backgroundMusicRef.current) {
+      backgroundMusicRef.current.volume = musicVolume / 100;
+    }
+  }, [musicVolume]);
+
+  function startBackgroundMusic() {
+    const playback = backgroundMusicRef.current?.play();
+    if (playback) {
+      playback.catch(error => {
+        console.error('Unable to play background music.', error);
+      });
+    }
+  }
 
   useEffect(() => {
     fetch('http://localhost:5000/api/high-score')
@@ -168,13 +186,21 @@ export function GameProvider({ children }) {
       streak,
       spawnedObjects,
       highScore,
+      musicVolume,
+      setMusicVolume,
+      startBackgroundMusic,
       range,
       handleCoefficientSlider,
       startGameplay,
       fireEquationStrike
     }}>
       {children}
+      <audio
+        ref={backgroundMusicRef}
+        src={backgroundMusic}
+        loop
+        preload="auto"
+      />
     </GameContext.Provider>
   );
 }
-
