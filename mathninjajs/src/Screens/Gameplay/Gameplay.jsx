@@ -285,7 +285,7 @@ export default function Gameplay({ onBack }) {
 
         <div className="slider-list">
           {activeWeapon && Object.keys(activeWeapon.coefficients || {}).map((key) => {
-            const [min, max] = activeWeapon.minMax?.[key] || [-5, 5];
+            const [min, max] = activeWeapon.minMax?.[key] || [-10, 10];
             const value = activeWeapon.coefficients[key];
             return (
               <label className="coefficient-slider" key={key}>
