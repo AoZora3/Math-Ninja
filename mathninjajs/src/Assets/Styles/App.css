@@ -460,12 +460,6 @@ textarea::placeholder {
   line-height: 1.2;
 }
 
-.hud-label {
-  color: #8da0ba;
-  font-size: 10px;
-  letter-spacing: 1px;
-}
-
 .score-block strong {
   font-size: 28px;
   color: #f9fafb;
@@ -593,8 +587,28 @@ textarea::placeholder {
 }
 
 .equation-controls { min-height: 0; padding: 14px; }
-.control-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.control-heading h2 { color: #f8fafc; font-size: 1.1rem; margin-top: 4px; }
+.live-equation {
+  background: #eaeaeb;
+  border: 1px solid #000000;
+  padding: 8px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  margin:auto;
+}
+.hud-label {
+  color: #040404;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.control-heading {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+.control-heading h2 { color: #09090a; font-size: 10px; margin-top: 2px; }
 .type-switch {
   border: 1px solid #52667f;
   border-radius: 8px;
@@ -608,6 +622,8 @@ textarea::placeholder {
 .coefficient-slider span { display: flex; justify-content: space-between; color: #b9c7d9; font-size: .78rem; margin-bottom: 4px; }
 .coefficient-slider output { color: #56e39f; font-weight: 800; }
 .coefficient-slider input { width: 100%; accent-color: #56e39f; }
+.equation-action-row { display: flex; gap: 10px; margin-top: 12px; }
+.equation-action-row > button { flex: 1; min-width: 0; width: auto; }
 .fire-button { width: 100%; border: 0; border-radius: 10px; padding: 12px; background: #56e39f; color: #09251a; font-weight: 900; text-transform: uppercase; letter-spacing: .8px; }
 .fire-button:disabled { cursor: not-allowed; opacity: .5; }
 .hotbar-header {

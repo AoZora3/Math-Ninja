@@ -290,11 +290,6 @@ export default function Gameplay({ onBack, onWin }) {
       </header>
 
       <section className="gameplay-board-panel">
-        <div className="equation-badge">
-          <span className="equation-type">{effectiveWeapon?.inverse ? 'logarithmic' : activeWeapon?.type || 'equation'} equation</span>
-          <strong>{getEquationText(effectiveWeapon || activeWeapon)}</strong>
-        </div>
-
         <div className="gameplay-board">
           <svg className="graph-svg" viewBox="0 0 320 260" preserveAspectRatio="none" aria-label="Gameplay graph">
             <defs>
@@ -386,21 +381,10 @@ export default function Gameplay({ onBack, onWin }) {
 
       <section className="equation-controls" aria-label="Equation controls">
         <div className="control-heading">
-          <div>
           <div className="live-equation">
             <span className="hud-label">LIVE EQUATION: </span>
             <h2>{getEquationText(effectiveWeapon || activeWeapon)}</h2>
           </div>
-          </div>
-          {activeWeapon?.type === 'exponential' ? (
-            <button type="button" className="type-switch" onClick={() => setIsInverted((prev) => !prev)}>
-              {isInverted ? 'Show exponential' : 'Show inverse log'}
-            </button>
-          ) : availablePolynomialTypes.length > 1 ? (
-            <button type="button" className="type-switch" onClick={switchEquationType}>
-              Switch to {nextPolynomialType}
-            </button>
-          ) : null}
         </div>
 
         <div className="slider-list">
