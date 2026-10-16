@@ -1,14 +1,38 @@
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
 export default function Combo({ multiplier = 1, streak = 0 }) {
   return (
-    <div className="combo-container">
-      <span className={`combo-multiplier ${multiplier > 1 ? 'active' : ''}`}>
+    <View style={styles.comboContainer}>
+      <Text style={[styles.comboMultiplier, multiplier > 1 && styles.active]}>
         {multiplier}x
-      </span>
+      </Text>
       {streak > 0 && (
-        <span className="combo-streak">
+        <Text style={styles.comboStreak}>
           ({streak} STREAK)
-        </span>
+        </Text>
       )}
-    </div>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  comboContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  comboMultiplier: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#888',
+  },
+  active: {
+    color: '#ffb703',
+  },
+  comboStreak: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4cc9f0',
+  },
+});

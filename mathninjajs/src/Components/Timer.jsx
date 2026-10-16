@@ -1,13 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
-/**
- * Dual-mode Timer Component
- * @param {'countup' | 'countdown'} mode - Timer operating mode
- * @param {number} initialTime - Time in seconds for countdown mode
- * @param {boolean} isActive - Controls active ticking state
- * @param {function} onTimeUp - Callback fired when countdown reaches 0
- * @param {function} onTick - Callback fired on every second update
- */
 export default function Timer({
   mode = 'countup',
   initialTime = 60,
@@ -55,23 +48,36 @@ export default function Timer({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const isLowTime = mode === 'countdown' && seconds <= 10;
+
   return (
-    <div
-      className="timer-badge"
-      aria-label={`Time ${mode === 'countdown' ? 'remaining' : 'elapsed'} ${formatTime(seconds)}`}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-    >
-      <span className="timer-label">{mode === 'countdown' ? '⏳ REMAINING' : '⏱ ELAPSED'}</span>
-      <span
-        className="timer-value"
-        style={{
-          fontFamily: 'monospace',
-          fontWeight: 'bold',
-          color: mode === 'countdown' && seconds <= 10 ? '#e63946' : 'inherit',
-        }}
-      >
+    <View style={styles.timerBadge}>
+      <Text style={styles.timerLabel}>
+        {mode === 'countdown' ? '⏳ REMAINING' : '⏱ ELAPSED'}
+      </Text>
+      <Text style={[styles.timerValue, isLowTime && styles.lowTime]}>
         {formatTime(seconds)}
-      </span>
-    </div>
+      </Text>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  timerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  timerLabel: {
+    fontSize: 14,
+  },
+  timerValue: {
+    fontFamily: 'monospace',
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#000',
+  },
+  lowTime: {
+    color: '#e63946',
+  },
+});
