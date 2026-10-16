@@ -187,6 +187,16 @@ STAGE SELECT
   border-color: #ffcc33;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
+/* Locked stage cards remain readable but cannot be selected or hovered. */
+.stage-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+.stage-card:disabled:hover {
+  transform: none;
+  border-color: #334761;
+  box-shadow: none;
+}
 .stage-number {
   min-width: 55px;
   height: 55px;
@@ -216,7 +226,8 @@ ENDLESS MODE
 */
 
 .endless-card {
-  grid-column: span 2;
+  /* Match the stage-card width and fill the next two-column grid slot. */
+  grid-column: span 1;
   border-color: #715a18;
   background:
     linear-gradient(

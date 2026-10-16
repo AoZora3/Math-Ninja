@@ -9,6 +9,15 @@ export default function Stage1({ setScreen, onEditPreset, onAddEquation, onConti
     const a = Number(coefficients.a ?? 1);
     const b = Number(coefficients.b ?? 0);
 
+    // Stage 1 includes a cubic preset in addition to line and parabola presets.
+    if (preset.type === "cubic") {
+      return {
+        equation: `y = ${a}x³ ${b >= 0 ? '+' : '-'} ${Math.abs(b)}`,
+        title: "CUBIC EQUATION",
+        description: "An S-shaped graph with adjustable stretch and vertical shift."
+      };
+    }
+
     if (preset.type === "quadratic") {
       return {
         equation: `y = ${a}x² ${b >= 0 ? '+' : '-'} ${Math.abs(b)}`,

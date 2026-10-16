@@ -1,5 +1,6 @@
 import { useContext } from "react";
 import { GameContext } from "../../Context/GameContext.jsx";
+import { getTrigonometricEquation } from "../../Game/Equations/EquationText.js";
 
 export default function Stage2({ setScreen, onEditPreset, onAddEquation, onContinue }) {
   const { presets, setActivePreset } = useContext(GameContext);
@@ -8,13 +9,10 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
     const coefficients = preset.coefficients || { a: 1, b: 0, c: 0, d: 0 };
     const a = Number(coefficients.a ?? 1);
     const b = Number(coefficients.b ?? 1);
-    const c = Number(coefficients.c ?? 0);
-    const d = Number(coefficients.d ?? 0);
-
     if (preset.type === "trigonometric") {
       if (preset.waveType === "classic") {
         return {
-          equation: `y = ${a}sin(${b}x)`,
+          equation: getTrigonometricEquation(preset),
           title: "CLASSIC WAVE",
           description: "Smooth repeating motion with a fixed ceiling and floor."
         };
@@ -22,7 +20,7 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
 
       if (preset.waveType === "multi") {
         return {
-          equation: `y = ${a}sin(${b}x) + ${c}sin(${d}x)`,
+          equation: getTrigonometricEquation(preset),
           title: "MULTI-FREQUENCY",
           description: "A larger wave with smaller ripples mixed together."
         };
@@ -30,14 +28,14 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
 
       if (preset.waveType === "damped") {
         return {
-          equation: `y = ${a}sin(${b}x) * exp(-${c}x)`,
+          equation: getTrigonometricEquation(preset),
           title: "DAMPED WAVE",
           description: "A wave that fades back to rest after intense motion."
         };
       }
 
       return {
-        equation: `y = ${a}tan(${b}x)`,
+        equation: getTrigonometricEquation(preset),
         title: "TELEPORTING RAMP",
         description: "A sharp climbing curve with instant discontinuities."
       };

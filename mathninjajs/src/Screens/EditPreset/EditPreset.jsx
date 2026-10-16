@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import PresetCard from '../../Components/PresetCards.jsx';
 import MathGraph from '../Gameplay/MathGraph';
+import { getTrigonometricEquation } from '../../Game/Equations/EquationText.js';
+import { getStage3Equation } from '../../Game/Equations/Stage3Equation.js';
 
 const formatNumber = (value) => {
   const rounded = Number(value);
@@ -13,27 +15,20 @@ const buildEquationString = (preset) => {
 
   const a = Number(preset.coefficients?.a ?? 0);
   const b = Number(preset.coefficients?.b ?? 0);
-  const c = Number(preset.coefficients?.c ?? 0);
-  const d = Number(preset.coefficients?.d ?? 0);
-
+  if (preset.type === 'exponential' && preset.inverseFn) {
+    return getStage3Equation(preset);
+  }
   if (preset.type === 'trigonometric') {
-    if (preset.waveType === 'classic') {
-      return `y = ${formatNumber(a)}sin(${formatNumber(b)}x)`;
-    }
-
-    if (preset.waveType === 'multi') {
-      return `y = ${formatNumber(a)}sin(${formatNumber(b)}x) + ${formatNumber(c)}sin(${formatNumber(d)}x)`;
-    }
-
-    if (preset.waveType === 'damped') {
-      return `y = ${formatNumber(a)}sin(${formatNumber(b)}x) * exp(-${formatNumber(c)}x)`;
-    }
-
-    return `y = ${formatNumber(a)}tan(${formatNumber(b)}x)`;
+    return getTrigonometricEquation(preset);
   }
 
   if (preset.type === 'quadratic') {
     return `y = ${formatNumber(a)}x² ${b >= 0 ? '+' : '-'} ${formatNumber(Math.abs(b))}`;
+  }
+
+  // Preserve cubic notation while coefficients are edited.
+  if (preset.type === 'cubic') {
+    return `y = ${formatNumber(a)}x³ ${b >= 0 ? '+' : '-'} ${formatNumber(Math.abs(b))}`;
   }
 
   return `y = ${formatNumber(a)}x ${b >= 0 ? '+' : '-'} ${formatNumber(Math.abs(b))}`;
@@ -72,8 +67,12 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
       ...preset,
       id: preset.id || `preset-${Date.now()}`,
       title:
-        preset.type === 'quadratic'
-          ? 'QUADRATIC EQUATION'
+        preset.type === 'exponential' && preset.inverseFn
+          ? preset.title
+          : preset.type === 'cubic'
+          ? 'CUBIC EQUATION'
+          : preset.type === 'quadratic'
+            ? 'QUADRATIC EQUATION'
           : preset.type === 'trigonometric'
             ? (preset.waveType === 'classic'
                 ? 'CLASSIC WAVE'
@@ -84,8 +83,12 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
                     : 'TELEPORTING RAMP')
             : 'LINEAR EQUATION',
       description:
-        preset.type === 'quadratic'
-          ? 'A curved graph with a vertical stretch and shift.'
+        preset.type === 'exponential' && preset.inverseFn
+          ? preset.description
+          : preset.type === 'cubic'
+          ? 'An S-shaped graph with adjustable stretch and vertical shift.'
+          : preset.type === 'quadratic'
+            ? 'A curved graph with a vertical stretch and shift.'
           : preset.type === 'trigonometric'
             ? (preset.waveType === 'classic'
                 ? 'Smooth repeating motion with a fixed ceiling and floor.'
@@ -106,8 +109,12 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
       <header className="header" style={{ marginBottom: 12 }}>
         <button className="back-button" onClick={onBack}>←</button>
         <h2>{
-          preset.type === 'quadratic'
-            ? 'EDIT QUADRATIC'
+          preset.type === 'exponential' && preset.inverseFn
+            ? `EDIT ${preset.title}`
+            : preset.type === 'cubic'
+            ? 'EDIT CUBIC'
+            : preset.type === 'quadratic'
+              ? 'EDIT QUADRATIC'
             : preset.type === 'trigonometric'
               ? (preset.waveType === 'classic'
                   ? 'EDIT CLASSIC WAVE'

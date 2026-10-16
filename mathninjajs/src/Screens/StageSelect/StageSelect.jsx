@@ -1,12 +1,17 @@
 import GettingStarted from "./Tutorial/GettingStarted.jsx";
 
-export default function StageSelect({ screen, setScreen, showOnboarding, setShowOnboarding}) {
+export default function StageSelect({ screen, setScreen, onBack, showOnboarding, setShowOnboarding, unlockedStep }) {
+  // Step 4 is available only after the combined Stage 3 has been cleared.
+  const stage2Unlocked = unlockedStep >= 2;
+  const stage3Unlocked = unlockedStep >= 3;
+  const endlessUnlocked = unlockedStep >= 4;
+
     return (
       <div className="screen">
         <header className="header">
           <button
             className="back-button"
-            onClick={() => setScreen("splash")}
+            onClick={onBack}
           >
             ←
           </button>
@@ -67,7 +72,8 @@ export default function StageSelect({ screen, setScreen, showOnboarding, setShow
             {/* STAGE 2 */}
 
             <button
-              className="stage-card unlocked"
+              className={`stage-card ${stage2Unlocked ? "unlocked" : "locked"}`}
+              disabled={!stage2Unlocked}
               onClick={() => setScreen("stage2")}
             >
               <div className="stage-number">
@@ -82,15 +88,16 @@ export default function StageSelect({ screen, setScreen, showOnboarding, setShow
                 </p>
 
                 <span className="play-label">
-                  🔓 PLAY
+                  {stage2Unlocked ? "🔓 PLAY" : "🔒 LOCKED"}
                 </span>
               </div>
             </button>
 
-            {/* STAGE 3 */}
+            {/* Stage 3 combines the former logarithmic and exponential stages. */}
 
             <button
-              className="stage-card unlocked"
+              className={`stage-card ${stage3Unlocked ? "unlocked" : "locked"}`}
+              disabled={!stage3Unlocked}
               onClick={() => setScreen("stage3")}
             >
               <div className="stage-number">
@@ -98,37 +105,14 @@ export default function StageSelect({ screen, setScreen, showOnboarding, setShow
               </div>
 
               <div className="stage-info">
-                <h3>LOGARITHMIC ATTACK</h3>
+                <h3>EXPONENTIALS + INVERSE LOGS</h3>
 
                 <p>
-                  Explore logarithmic equations.
+                  Compare four exponential curves with their inverse logarithms.
                 </p>
 
                 <span className="play-label">
-                  🔓 PLAY
-                </span>
-              </div>
-            </button>
-
-            {/* STAGE 4 */}
-
-            <button
-              className="stage-card unlocked"
-              onClick={() => setScreen("stage4")}
-            >
-              <div className="stage-number">
-                4
-              </div>
-
-              <div className="stage-info">
-                <h3>EXPONENTIAL MASTER</h3>
-
-                <p>
-                  Put your graph skills to the exponential test.
-                </p>
-
-                <span className="play-label">
-                  🔓 PLAY
+                  {stage3Unlocked ? "🔓 PLAY" : "🔒 LOCKED"}
                 </span>
               </div>
             </button>
@@ -136,7 +120,8 @@ export default function StageSelect({ screen, setScreen, showOnboarding, setShow
             {/* ENDLESS MODE */}
 
             <button
-              className="stage-card endless-card"
+              className={`stage-card endless-card ${endlessUnlocked ? "unlocked" : "locked"}`}
+              disabled={!endlessUnlocked}
               onClick={() =>
                 alert("Endless Mode is coming soon!")
               }
@@ -153,7 +138,7 @@ export default function StageSelect({ screen, setScreen, showOnboarding, setShow
                 </p>
 
                 <span className="endless-label">
-                  ∞ ENDLESS
+                  {endlessUnlocked ? "∞ UNLOCKED" : "🔒 LOCKED"}
                 </span>
               </div>
             </button>

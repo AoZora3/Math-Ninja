@@ -1,7 +1,7 @@
 import Settings from "../../Game/Settings/Settings.jsx";
 import "../../Assets/Styles/TitleScreenStyle.css"
 
-function TitleScreen({ onStart, screen, setScreen, musicVolume, onMusicVolumeChange }) {
+function TitleScreen({ onStart, screen, setScreen, musicVolume, onMusicVolumeChange, sfxVolume, onSfxVolumeChange, onResetProgress, onUnlockAllStages }) {
   return (
       <div className={`screen splash-screen ${screen === "splash" ? "active" : ""}`}>
 
@@ -25,10 +25,14 @@ function TitleScreen({ onStart, screen, setScreen, musicVolume, onMusicVolumeCha
           MathNinja
         </p>
 
-        {screen === "settings" && (
+        {screen === "settings" && ( // Title settings menu
           <Settings
             volume={musicVolume}
             onVolumeChange={onMusicVolumeChange}
+            sfxVolume={sfxVolume}
+            onSfxVolumeChange={onSfxVolumeChange}
+            onResetProgress={onResetProgress}
+            onUnlockAllStages={onUnlockAllStages}
             setScreen={setScreen}
           />
         )}

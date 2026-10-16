@@ -13,13 +13,15 @@ import sliceMissSound from '../Assets/SoundEffects/SliceMiss.mp3';
 export const GameContext = createContext(null);
 export const GAME_DURATION_SECONDS = 180;
 export const GOAL_SCORE = 100;
+
 const MAX_OBJECTS_PER_TYPE = 6; // Limit active fruit and bombs independently.
-const OBJECT_LIFETIME_MS = 5000; // Despawn each object after about five seconds.
+const OBJECT_LIFETIME_MS = 5000; // Despawn each object after five seconds.
 const DESPAWN_CHECK_INTERVAL_MS = 250; // Check often so expiry stays close to five seconds.
 
-function playSoundEffect(sound) {
+// Apply the independent SFX setting to each one-shot audio player.
+function playSoundEffect(sound, volume) {
   const audio = new Audio(sound);
-  audio.volume = 0.7;
+  audio.volume = volume / 100;
   const playback = audio.play();
   playback?.catch(() => {});
 }
@@ -35,10 +37,12 @@ export function GameProvider({ children }) {
   const [comboMultiplier, setComboMultiplier] = useState(1);
   const [streak, setStreak] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION_SECONDS);
+  const [isPaused, setIsPaused] = useState(false);
   const [equationStats, setEquationStats] = useState({ attempts: 0, hits: 0 });
   const [spawnedObjects, setSpawnedObjects] = useState([]);
   const [highScore, setHighScore] = useState(0);
-  const [musicVolume, setMusicVolume] = useState(50);
+  const [musicVolume, setMusicVolume] = useState(67); // default volume level for background music
+  const [sfxVolume, setSfxVolume] = useState(67);     // default volume level for sound effects
   const [musicStarted, setMusicStarted] = useState(false);
   const backgroundMusicRef = useRef(null);
 
@@ -58,6 +62,12 @@ export function GameProvider({ children }) {
     playback?.catch(() => {});
   }, [currentScreen, musicStarted]);
 
+  useEffect(() => {
+    if (backgroundMusicRef.current) {
+      backgroundMusicRef.current.volume = musicVolume / 100;
+    }
+  }, [musicVolume]);
+
   function startBackgroundMusic() {
     setMusicStarted(true);
     const playback = backgroundMusicRef.current?.play();
@@ -73,12 +83,12 @@ export function GameProvider({ children }) {
       if (!button || button.closest('.gameplay-shell')) return;
 
       const label = button.textContent?.trim().toLowerCase() || '';
-      playSoundEffect(label.startsWith('continue') ? presetSelectSound : clickSound);
+      playSoundEffect(label.startsWith('continue') ? presetSelectSound : clickSound, sfxVolume);
     };
 
     document.addEventListener('click', handleMenuButtonClick, true);
     return () => document.removeEventListener('click', handleMenuButtonClick, true);
-  }, []);
+  }, [sfxVolume]);
 
   useEffect(() => {
     fetch('http://localhost:5000/api/high-score')
@@ -99,6 +109,7 @@ export function GameProvider({ children }) {
   }
 
   function startGameplay(modeIsEndless = false) {
+    setIsPaused(false);
     setScore(0);
     scoreRef.current = 0;
     setLives(3);
@@ -139,7 +150,8 @@ export function GameProvider({ children }) {
   };
 
   useEffect(() => {
-    if (currentScreen !== 'gameplay') return;
+    // Clearing this effect's intervals freezes the run without resetting its state.
+    if (currentScreen !== 'gameplay' || isPaused) return;
 
     const clockTimer = setInterval(() => {
       setTimeLeft(prev => {
@@ -181,7 +193,7 @@ export function GameProvider({ children }) {
       clearInterval(spawnerTimer);
       clearInterval(despawnTimer); // Stop despawn checks when gameplay ends.
     };
-  }, [currentScreen, isEndless, elapsedTime]);
+  }, [currentScreen, isEndless, elapsedTime, isPaused]);
 
   // Fire Equation
   function fireEquationStrike(selectedPreset = activePreset) {
@@ -219,9 +231,9 @@ export function GameProvider({ children }) {
       setComboMultiplier(1 + Math.floor(nextStreak / 5));
     }
 
-    if (fruitHits > 0) playSoundEffect(sliceHitSound);
-    if (lifeChange > 0) playSoundEffect(bombSound);
-    if (fruitHits === 0 && lifeChange === 0) playSoundEffect(sliceMissSound);
+    if (fruitHits > 0) playSoundEffect(sliceHitSound, sfxVolume);
+    if (lifeChange > 0) playSoundEffect(bombSound, sfxVolume);
+    if (fruitHits === 0 && lifeChange === 0) playSoundEffect(sliceMissSound, sfxVolume);
 
     const awardedScore = scoreChange * comboMultiplier;
     if (awardedScore > 0) {
@@ -262,6 +274,8 @@ export function GameProvider({ children }) {
       score,
       lives,
       timeLeft,
+      isPaused,
+      setIsPaused,
       hitRate: equationStats.attempts === 0 ? 0 : (equationStats.hits / equationStats.attempts) * 100,
       comboMultiplier,
       streak,
@@ -269,6 +283,8 @@ export function GameProvider({ children }) {
       highScore,
       musicVolume,
       setMusicVolume,
+      sfxVolume,
+      setSfxVolume,
       startBackgroundMusic,
       range,
       handleCoefficientSlider,
@@ -285,6 +301,7 @@ export function GameProvider({ children }) {
       <audio
         ref={backgroundMusicRef}
         src={currentScreen === 'gameplay' ? gameplayMusic : backgroundMusic}
+        volume={musicVolume / 100}
         loop
         preload="auto"
       />

@@ -1,38 +1,77 @@
+const invalidInverse = () => Number.NaN;
+
 export const stage3Presets = [
   {
-    id: 'log-classic',
-    type: 'logarithmic',
-    formulaKind: 'classic',
-    label: 'y = A * ln(x - H) + K',
-    equation: 'y = 2 * ln(x - 1) + 0',
-    title: 'LOGARITHMIC CURVE',
-    description: 'A steep bend that flattens out as it moves along the path.',
-    coefficients: { a: 2, b: 1, c: 0 },
-    minMax: { a: [-5, 5], b: [-2, 4], c: [-5, 5] },
-    fn: (x, c) => (c.a ?? 1) * Math.log(x - (c.b ?? 0)) + (c.c ?? 0)
+    id: 'exp-a-stretch',
+    type: 'exponential',
+    formulaKind: 'exp-x-stretch',
+    label: 'y = a * e^x + b',
+    equation: 'y = 2e^x + 1',
+    inverseEquation: 'y = ln((x - 1) / 2)',
+    title: 'STRETCH + VERTICAL SHIFT',
+    description: 'a stretches or flips the curve; b shifts it vertically.',
+    coefficients: { a: 2, b: 1 },
+    minMax: { a: [-5, 5], b: [-5, 5] },
+    fn: (x, c) => (c.a ?? 1) * Math.exp(x) + (c.b ?? 0),
+    inverseFn: (x, c) => {
+      const a = c.a ?? 1;
+      if (a === 0) return invalidInverse();
+      return Math.log((x - (c.b ?? 0)) / a);
+    }
   },
   {
-    id: 'log-inverted',
-    type: 'logarithmic',
-    formulaKind: 'inverted',
-    label: 'y = K - A * ln(x)',
-    equation: 'y = 2 - 1.5 * ln(x)',
-    title: 'INVERTED LOG',
-    description: 'A sharp drop from the upper corner that settles flat.',
-    coefficients: { a: 1.5, b: 0, c: 2 },
-    minMax: { a: [-5, 5], b: [0, 2], c: [-5, 5] },
-    fn: (x, c) => (c.c ?? 0) - (c.a ?? 1) * Math.log(x + (c.b ?? 0))
+    id: 'exp-rate-a',
+    type: 'exponential',
+    formulaKind: 'exp-rate-a',
+    label: 'y = e^(a * x) + b',
+    equation: 'y = e^(2x) + 1',
+    inverseEquation: 'y = ln(x - 1) / 2',
+    title: 'GROWTH RATE + SHIFT',
+    description: 'a controls growth or decay rate; b shifts the curve vertically.',
+    coefficients: { a: 2, b: 1 },
+    minMax: { a: [-3, 3], b: [-5, 5] },
+    fn: (x, c) => Math.exp((c.a ?? 1) * x) + (c.b ?? 0),
+    inverseFn: (x, c) => {
+      const a = c.a ?? 1;
+      if (a === 0) return invalidInverse();
+      return Math.log(x - (c.b ?? 0)) / a;
+    }
   },
   {
-    id: 'log-steep',
-    type: 'logarithmic',
-    formulaKind: 'classic',
-    label: 'y = A * ln(x - H) + K',
-    equation: 'y = 3 * ln(x - 0.5) - 1',
-    title: 'STEEP LOG',
-    description: 'A dramatic curve that bends hard before leveling out.',
-    coefficients: { a: 3, b: 0.5, c: -1 },
-    minMax: { a: [-5, 5], b: [-2, 4], c: [-5, 5] },
-    fn: (x, c) => (c.a ?? 1) * Math.log(x - (c.b ?? 0)) + (c.c ?? 0)
+    id: 'exp-amplitude-rate',
+    type: 'exponential',
+    formulaKind: 'exp-amplitude-rate',
+    label: 'y = a * e^(b * x)',
+    equation: 'y = 2e^(0.5x)',
+    inverseEquation: 'y = ln(x / 2) / 0.5',
+    title: 'START VALUE + RATE',
+    description: 'a is the start value; b controls growth or decay rate.',
+    coefficients: { a: 2, b: 0.5 },
+    minMax: { a: [-5, 5], b: [-3, 3] },
+    fn: (x, c) => (c.a ?? 1) * Math.exp((c.b ?? 1) * x),
+    inverseFn: (x, c) => {
+      const a = c.a ?? 1;
+      const b = c.b ?? 1;
+      if (a === 0 || b === 0) return invalidInverse();
+      return Math.log(x / a) / b;
+    }
+  },
+  {
+    id: 'exp-output-scale',
+    type: 'exponential',
+    formulaKind: 'exp-output-scale',
+    label: 'y = (e^x - b) / a',
+    equation: 'y = (e^x - 1) / 2',
+    inverseEquation: 'y = ln(2x + 1)',
+    title: 'OUTPUT SCALE + SHIFT',
+    description: 'a scales the output; b shifts the inverse logarithm horizontally.',
+    coefficients: { a: 2, b: 1 },
+    minMax: { a: [-5, 5], b: [-5, 5] },
+    fn: (x, c) => {
+      const a = c.a ?? 1;
+      if (a === 0) return invalidInverse();
+      return (Math.exp(x) - (c.b ?? 0)) / a;
+    },
+    inverseFn: (x, c) => Math.log((c.a ?? 1) * x + (c.b ?? 0))
   }
 ];
