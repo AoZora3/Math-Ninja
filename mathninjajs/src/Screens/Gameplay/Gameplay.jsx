@@ -6,15 +6,14 @@ import StageResult from '../StageResult/StageResult.jsx';
 import { GAME_DURATION_SECONDS, GOAL_SCORE } from '../../Context/GameContext.jsx';
 import { getTrigonometricEquation } from '../../Game/Equations/EquationText.js';
 import { getStage3Equation } from '../../Game/Equations/Stage3Equation.js';
-import appleSlicedSprite from '../../Assets/Sprites/Apple_Sliced_Sprite.png';
 import appleSprite from '../../Assets/Sprites/Apple_Sprite.png';
+import appleSlicedSprite from '../../Assets/Sprites/Apple_Sliced_Sprite.png';
 import bombExplosionSprite from '../../Assets/Sprites/Bomb_Explosion_Sprite.png';
 import bombSprite from '../../Assets/Sprites/Bomb_Sprite.png';
 import AppleRain from './AppleRain.jsx';
 import '../../Assets/Styles/Gameplay.css';
 
 const POLYNOMIAL_TYPE_CYCLE = ['linear', 'quadratic', 'cubic'];
-const FRUIT_EMOJIS = ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍒', '🍍', '🥝', '🥭'];
 
 function getEquationText(preset) {
   if (!preset) return 'y = 0';
@@ -356,10 +355,6 @@ export default function Gameplay({ onBack, onWin }) {
             const isFruit = obj.type === 'fruit';
             const left = ((obj.x + 10) / 20) * 100;
             const top = 100 - ((obj.y + 10) / 20) * 100;
-            // Stable object ids keep each fruit's emoji consistent for its lifetime.
-            const fruitEmoji = FRUIT_EMOJIS[
-              Math.abs(Math.floor(Number(obj.id) * 100000)) % FRUIT_EMOJIS.length
-            ] || FRUIT_EMOJIS[0];
             const targetName = isSliced ? 'Sliced fruit' : isExploded ? 'Bomb explosion' : isFruit ? 'Fruit' : 'Bomb';
 
             return (
@@ -378,7 +373,9 @@ export default function Gameplay({ onBack, onWin }) {
                     aria-hidden="true"
                     draggable="false"
                   />
-                ) : isFruit ? fruitEmoji : (
+                ) : isFruit ? (
+                  <img src={appleSprite} alt="" aria-hidden="true" draggable="false" />
+                ) : (
                   <img src={bombSprite} alt="" aria-hidden="true" draggable="false" />
                 )}
               </div>
