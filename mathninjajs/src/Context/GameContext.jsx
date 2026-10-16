@@ -1,6 +1,9 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import { checkEquationSlice } from '../Game/Collision.js';
 import { stage1Presets } from '../Game/Equations/StagePreset1.js';
+import { stage2Presets } from '../Game/Equations/StagePreset2.js';
+import { stage3Presets } from '../Game/Equations/StagePreset3.js';
+import { stage4Presets } from '../Game/Equations/StagePreset4.js';
 import backgroundMusic from '../Assets/SoundEffects/BGM.mp3';
 import gameplayMusic from '../Assets/SoundEffects/BGGM.mp3';
 import bombSound from '../Assets/SoundEffects/Bomb.mp3';
@@ -9,13 +12,12 @@ import presetSelectSound from '../Assets/SoundEffects/PresetSelect.mp3';
 import sliceHitSound from '../Assets/SoundEffects/SliceHit.mp3';
 import sliceMissSound from '../Assets/SoundEffects/SliceMiss.mp3';
 
-
 export const GameContext = createContext(null);
 export const GAME_DURATION_SECONDS = 180;
 export const GOAL_SCORE = 100;
-const MAX_OBJECTS_PER_TYPE = 6; // Limit active fruit and bombs independently.
-const OBJECT_LIFETIME_MS = 5000; // Despawn each object after about five seconds.
-const DESPAWN_CHECK_INTERVAL_MS = 250; // Check often so expiry stays close to five seconds.
+const MAX_OBJECTS_PER_TYPE = 6;
+const OBJECT_LIFETIME_MS = 5000;
+const DESPAWN_CHECK_INTERVAL_MS = 250;
 
 function playSoundEffect(sound) {
   const audio = new Audio(sound);
@@ -31,7 +33,6 @@ export function GameProvider({ children }) {
 
   const [score, setScore] = useState(0);
   const scoreRef = useRef(0);
-  const [lives, setLives] = useState(3);
   const [comboMultiplier, setComboMultiplier] = useState(1);
   const [streak, setStreak] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION_SECONDS);
@@ -43,8 +44,14 @@ export function GameProvider({ children }) {
   const backgroundMusicRef = useRef(null);
 
   const [isEndless, setIsEndless] = useState(false);
-  const [difficultyTier, setDifficultyTier] = useState(1);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [totalTimeSurvived, setTotalTimeSurvived] = useState(0);
+
+  const allPresets = [
+    ...stage1Presets,
+    ...stage2Presets,
+    ...stage3Presets,
+    ...stage4Presets
+  ];
 
   const range = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 };
 
@@ -62,23 +69,9 @@ export function GameProvider({ children }) {
     setMusicStarted(true);
     const playback = backgroundMusicRef.current?.play();
     if (playback) {
-        playback.catch(() => {});
-      
+      playback.catch(() => {});
     }
   }
-
-   useEffect(() => {
-    const handleMenuButtonClick = event => {
-      const button = event.target instanceof Element ? event.target.closest('button') : null;
-      if (!button || button.closest('.gameplay-shell')) return;
-
-      const label = button.textContent?.trim().toLowerCase() || '';
-      playSoundEffect(label.startsWith('continue') ? presetSelectSound : clickSound);
-    };
-
-    document.addEventListener('click', handleMenuButtonClick, true);
-    return () => document.removeEventListener('click', handleMenuButtonClick, true);
-  }, []);
 
   useEffect(() => {
     fetch('http://localhost:5000/api/high-score')
@@ -101,12 +94,19 @@ export function GameProvider({ children }) {
   function startGameplay(modeIsEndless = false) {
     setScore(0);
     scoreRef.current = 0;
-    setLives(3);
     setComboMultiplier(1);
     setStreak(0);
-    setTimeLeft(GAME_DURATION_SECONDS);
+    setTimeLeft(modeIsEndless ? 30 : GAME_DURATION_SECONDS);
     setEquationStats({ attempts: 0, hits: 0 });
+    setIsEndless(modeIsEndless);
+    setTotalTimeSurvived(0);
     setSpawnedObjects([]);
+
+    if (modeIsEndless) {
+      setPresets(allPresets);
+      setActivePreset(allPresets[Math.floor(Math.random() * allPresets.length)]);
+    }
+
     setCurrentScreen('gameplay');
   }
 
@@ -122,22 +122,6 @@ export function GameProvider({ children }) {
     }
   }
 
-  const registerMiss = () => {
-    setStreak(0);
-    setComboMultiplier(1);
-    if (isEndless) {
-      setLives(prev => {
-        const updated = prev - 1;
-        if (updated <= 0) {
-          sendScoreToBackend(scoreRef.current);
-          setCurrentScreen('gameOver');
-          return 0;
-        }
-        return updated;
-      });
-    }
-  };
-
   useEffect(() => {
     if (currentScreen !== 'gameplay') return;
 
@@ -147,14 +131,16 @@ export function GameProvider({ children }) {
           clearInterval(clockTimer);
           const finalScore = scoreRef.current;
           sendScoreToBackend(finalScore);
-          setCurrentScreen(finalScore >= GOAL_SCORE ? 'stageComplete' : 'gameOver');
+          setCurrentScreen(isEndless ? 'endlessComplete' : finalScore >= GOAL_SCORE ? 'stageComplete' : 'gameOver');
           return 0;
         }
         return prev - 1;
       });
-    }, 1000);
 
-    const spawnInterval = isEndless ? Math.max(500, 1500 - elapsedTime * 10) : 1500;
+      if (isEndless) {
+        setTotalTimeSurvived(prev => prev + 1);
+      }
+    }, 1000);
 
     const spawnerTimer = setInterval(() => {
       const isBomb = Math.random() < 0.25;
@@ -166,28 +152,27 @@ export function GameProvider({ children }) {
         spawnTime: Date.now()
       };
       setSpawnedObjects(prev => {
-        const activeObjects = prev.filter(obj => Date.now() - obj.spawnTime < OBJECT_LIFETIME_MS); // Drop expired objects during spawning too.
+        const activeObjects = prev.filter(obj => Date.now() - obj.spawnTime < OBJECT_LIFETIME_MS);
         const sameTypeCount = activeObjects.filter(obj => obj.type === newObject.type).length;
-        return sameTypeCount >= MAX_OBJECTS_PER_TYPE ? activeObjects : [...activeObjects, newObject]; // Keep at most six of each type.
+        return sameTypeCount >= MAX_OBJECTS_PER_TYPE ? activeObjects : [...activeObjects, newObject];
       });
     }, 1500);
 
     const despawnTimer = setInterval(() => {
-      setSpawnedObjects(prev => prev.filter(obj => Date.now() - obj.spawnTime < OBJECT_LIFETIME_MS)); // Despawn objects once they reach five seconds old.
+      setSpawnedObjects(prev => prev.filter(obj => Date.now() - obj.spawnTime < OBJECT_LIFETIME_MS));
     }, DESPAWN_CHECK_INTERVAL_MS);
 
     return () => {
       clearInterval(clockTimer);
       clearInterval(spawnerTimer);
-      clearInterval(despawnTimer); // Stop despawn checks when gameplay ends.
+      clearInterval(despawnTimer);
     };
-  }, [currentScreen, isEndless, elapsedTime]);
+  }, [currentScreen, isEndless]);
 
-  // Fire Equation
   function fireEquationStrike(selectedPreset = activePreset) {
     let scoreChange = 0;
-    let lifeChange = 0;
     let fruitHits = 0;
+    let bombHits = 0;
 
     const remaining = spawnedObjects.filter(obj => {
       const isHit = checkEquationSlice(obj, selectedPreset);
@@ -195,10 +180,9 @@ export function GameProvider({ children }) {
       if (isHit) {
         if (obj.type === 'fruit') {
           fruitHits += 1;
-          const timeBonus = isEndless ? Math.floor(Math.max(0, 5000 - (Date.now() - obj.spawnTime)) / 250) : 0;
-          scoreChange += (10 * difficultyTier + timeBonus);
+          scoreChange += 10;
         } else if (obj.type === 'bomb') {
-          lifeChange += 1;
+          bombHits += 1;
         }
         return false;
       }
@@ -210,41 +194,38 @@ export function GameProvider({ children }) {
       hits: prev.hits + (fruitHits > 0 ? 1 : 0)
     }));
 
-    if (lifeChange > 0 || fruitHits === 0) {
+    if (bombHits > 0 || fruitHits === 0) {
       setComboMultiplier(1);
       setStreak(0);
     } else {
       const nextStreak = streak + fruitHits;
       setStreak(nextStreak);
-      setComboMultiplier(1 + Math.floor(nextStreak / 5));
+      setComboMultiplier(nextStreak >= 6 ? 3 : nextStreak >= 3 ? 2 : 1);
     }
 
     if (fruitHits > 0) playSoundEffect(sliceHitSound);
-    if (lifeChange > 0) playSoundEffect(bombSound);
-    if (fruitHits === 0 && lifeChange === 0) playSoundEffect(sliceMissSound);
+    if (bombHits > 0) playSoundEffect(bombSound);
+    if (fruitHits === 0 && bombHits === 0) playSoundEffect(sliceMissSound);
+
+    if (isEndless) {
+      const timeBonus = fruitHits * 3;
+      const timePenalty = bombHits * 5;
+      setTimeLeft(prev => Math.max(0, prev + timeBonus - timePenalty));
+
+      const randomPreset = allPresets[Math.floor(Math.random() * allPresets.length)];
+      setActivePreset(randomPreset);
+    }
 
     const awardedScore = scoreChange * comboMultiplier;
     if (awardedScore > 0) {
       setScore(prev => {
         const nextScore = prev + awardedScore;
         scoreRef.current = nextScore;
-        if (nextScore >= GOAL_SCORE) {
+        if (!isEndless && nextScore >= GOAL_SCORE) {
           sendScoreToBackend(nextScore);
           setCurrentScreen('stageComplete');
         }
         return nextScore;
-      });
-    }
-
-    if (lifeChange > 0) {
-      setLives(prev => {
-        const nextLives = prev - lifeChange;
-        if (nextLives <= 0) {
-          sendScoreToBackend(scoreRef.current);
-          setCurrentScreen('gameOver');
-          return 0;
-        }
-        return nextLives;
       });
     }
 
@@ -260,7 +241,6 @@ export function GameProvider({ children }) {
       currentScreen,
       setCurrentScreen,
       score,
-      lives,
       timeLeft,
       hitRate: equationStats.attempts === 0 ? 0 : (equationStats.hits / equationStats.attempts) * 100,
       comboMultiplier,
@@ -276,10 +256,7 @@ export function GameProvider({ children }) {
       fireEquationStrike,
       isEndless,
       setIsEndless,
-      difficultyTier,
-      setDifficultyTier,
-      elapsedTime,
-      registerMiss
+      totalTimeSurvived
     }}>
       {children}
       <audio
