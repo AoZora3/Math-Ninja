@@ -390,8 +390,10 @@ export default function Gameplay({ onBack, onWin }) {
       <section className="equation-controls" aria-label="Equation controls">
         <div className="control-heading">
           <div>
-            <span className="hud-label">LIVE EQUATION</span>
+          <div className="live-equation">
+            <span className="hud-label">LIVE EQUATION: </span>
             <h2>{getEquationText(effectiveWeapon || activeWeapon)}</h2>
+          </div>
           </div>
           {activeWeapon?.type === 'exponential' ? (
             <button type="button" className="type-switch" onClick={() => setIsInverted((prev) => !prev)}>
@@ -423,10 +425,21 @@ export default function Gameplay({ onBack, onWin }) {
             );
           })}
         </div>
+        <div className="equation-action-row">
+          {activeWeapon?.type === 'exponential' ? (
+            <button type="button" className="type-switch" onClick={() => setIsInverted((prev) => !prev)}>
+              {isInverted ? 'Use normal curve' : 'Invert curve'}
+            </button>
+          ) : (
+            <button type="button" className="type-switch" onClick={switchEquationType}>
+              Switch to {activeWeapon?.type === 'linear' ? 'quadratic' : 'linear'}
+            </button>
+          )}
 
-        <button type="button" className="fire-button" onClick={() => handleFireEquation(effectiveWeapon || activeWeapon)} disabled={!activeWeapon || Boolean(resultState)}>
-          Fire equation
-        </button>
+          <button type="button" className="fire-button" onClick={() => handleFireEquation(effectiveWeapon || activeWeapon)} disabled={!activeWeapon || Boolean(resultState)}>
+            Fire equation
+          </button>
+        </div>
       </section>
 
       <section className="gameplay-hotbar">
