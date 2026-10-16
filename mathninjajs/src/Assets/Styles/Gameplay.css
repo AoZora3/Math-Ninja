@@ -65,7 +65,21 @@
   font-size: 8px;
   white-space: nowrap;
 }
+/* Apple rain effect */
+.gameplay-shell {
+  position: relative;
+  isolation: isolate;
+}
 
+.gameplay-shell > :not(.apple-rain) {
+  position: relative;
+  z-index: 1;
+}
+
+.apple-rain {
+  z-index: 0;
+}
+/*end of apple rain effect addition*/
 @keyframes curve-preview {
   from { opacity: 0.35; stroke-width: 2; }
   to { opacity: 1; stroke-width: 4; }

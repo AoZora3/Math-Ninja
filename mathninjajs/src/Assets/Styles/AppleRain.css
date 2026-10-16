@@ -1,0 +1,37 @@
+.apple-rain {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.falling-apple {
+  position: absolute;
+  top: -40px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  user-select: none;
+
+  animation: apple-waterfall linear infinite;
+  will-change: transform;
+}
+
+@keyframes apple-waterfall {
+  from {
+    transform: translate3d(0, -40px, 0) rotate(0deg);
+  }
+
+  to {
+    transform:
+      translate3d(var(--apple-drift), calc(100vh + 80px), 0)
+      rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .falling-apple {
+    animation: none;
+    display: none;
+  }
+}

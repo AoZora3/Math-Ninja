@@ -188,6 +188,8 @@ export function GameProvider({ children }) {
     let scoreChange = 0;
     let lifeChange = 0;
     let fruitHits = 0;
+    const slicedFruitObjects = [];
+    const explodedBombObjects = [];
 
     const remaining = spawnedObjects.filter(obj => {
       const isHit = checkEquationSlice(obj, selectedPreset);
@@ -195,10 +197,12 @@ export function GameProvider({ children }) {
       if (isHit) {
         if (obj.type === 'fruit') {
           fruitHits += 1;
+          slicedFruitObjects.push(obj);
           const timeBonus = isEndless ? Math.floor(Math.max(0, 5000 - (Date.now() - obj.spawnTime)) / 250) : 0;
           scoreChange += (10 * difficultyTier + timeBonus);
         } else if (obj.type === 'bomb') {
           lifeChange += 1;
+          explodedBombObjects.push(obj);
         }
         return false;
       }
@@ -249,6 +253,7 @@ export function GameProvider({ children }) {
     }
 
     setSpawnedObjects(remaining);
+    return { slicedFruits: slicedFruitObjects, explodedBombs: explodedBombObjects };
   }
 
   return (
