@@ -1,5 +1,7 @@
 import { useContext } from "react";
 import { GameContext } from "../../Context/GameContext.jsx";
+import { getTrigonometricEquation } from "../../Game/Equations/EquationText.js";
+import "../../Assets/Styles/Stages.css";
 
 export default function Stage2({ setScreen, onEditPreset, onAddEquation, onContinue }) {
   const { presets, setActivePreset } = useContext(GameContext);
@@ -8,13 +10,10 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
     const coefficients = preset.coefficients || { a: 1, b: 0, c: 0, d: 0 };
     const a = Number(coefficients.a ?? 1);
     const b = Number(coefficients.b ?? 1);
-    const c = Number(coefficients.c ?? 0);
-    const d = Number(coefficients.d ?? 0);
-
     if (preset.type === "trigonometric") {
       if (preset.waveType === "classic") {
         return {
-          equation: `y = ${a}sin(${b}x)`,
+          equation: getTrigonometricEquation(preset),
           title: "CLASSIC WAVE",
           description: "Smooth repeating motion with a fixed ceiling and floor."
         };
@@ -22,7 +21,7 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
 
       if (preset.waveType === "multi") {
         return {
-          equation: `y = ${a}sin(${b}x) + ${c}sin(${d}x)`,
+          equation: getTrigonometricEquation(preset),
           title: "MULTI-FREQUENCY",
           description: "A larger wave with smaller ripples mixed together."
         };
@@ -30,14 +29,14 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
 
       if (preset.waveType === "damped") {
         return {
-          equation: `y = ${a}sin(${b}x) * exp(-${c}x)`,
+          equation: getTrigonometricEquation(preset),
           title: "DAMPED WAVE",
           description: "A wave that fades back to rest after intense motion."
         };
       }
 
       return {
-        equation: `y = ${a}tan(${b}x)`,
+        equation: getTrigonometricEquation(preset),
         title: "TELEPORTING RAMP",
         description: "A sharp climbing curve with instant discontinuities."
       };
@@ -77,24 +76,6 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
           <p>Choose a trigonometric preset equation to study its graph.</p>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-          <button
-            type="button"
-            onClick={onAddEquation}
-            style={{
-              padding: "10px 16px",
-              borderRadius: 8,
-              border: "none",
-              background: "#f59e0b",
-              color: "#111827",
-              fontWeight: 700,
-              cursor: "pointer"
-            }}
-          >
-            Add Equation
-          </button>
-        </div>
-
         <div className="preset-grid">
           {presets.map((preset, index) => {
             const summary = getPresetSummary(preset);
@@ -124,25 +105,11 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
           })}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 24, marginBottom: 24 }}>
-          <button
-            type="button"
-            onClick={onContinue}
-            style={{
-              padding: "12px 28px",
-              borderRadius: 10,
-              border: "none",
-              background: "#22c55e",
-              color: "#052e16",
-              fontWeight: 700,
-              cursor: "pointer",
-              minWidth: 180,
-              position: "fixed",
-              bottom: "20px",       /* Distance from the bottom of the screen */
-              right: "auto",       /* Distance from the right of the screen */
-              zIndex: 1000,         /* Ensures it stays on top of other content */
-            }}
-          >
+        <div className="stage-actions">
+          <button type="button" className="add-equation-btn" onClick={onAddEquation}>
+            + Add Equation
+          </button>
+          <button type="button" className="continue-btn" onClick={onContinue}>
             Continue
           </button>
         </div>

@@ -1,59 +1,17 @@
 import { useContext } from "react";
 import { GameContext } from "../../Context/GameContext.jsx";
+import { getStage3Equation } from "../../Game/Equations/Stage3Equation.js";
+import "../../Assets/Styles/Stages.css";
 
 export default function Stage3({ setScreen, onEditPreset, onAddEquation, onContinue }) {
   const { presets, setActivePreset } = useContext(GameContext);
 
   const getPresetSummary = (preset) => {
-    const coefficients = preset.coefficients || { a: 1, b: 1, c: 0 };
-    const a = Number(coefficients.a ?? 1);
-    const b = Number(coefficients.b ?? 1);
-    const c = Number(coefficients.c ?? 0);
-
-    if (preset.type === "logarithmic") {
-      if (preset.formulaKind === "inverted") {
-        return {
-          equation: `y = ${c} - ${a}ln(x)`,
-          title: "INVERTED LOG",
-          description: "A sharp drop that flattens out into a horizontal tail."
-        };
-      }
-
-      return {
-        equation: `y = ${a}ln(x - ${b}) + ${c}`,
-        title: "LOGARITHMIC CURVE",
-        description: "A steep bend that quickly settles and flattens out."
-      };
-    }
-
-    if (preset.type === "exponential") {
-      if (preset.formulaKind === "logistic") {
-        return {
-          equation: `y = ${a} / (1 + e^(-${b}(x - ${c})))`,
-          title: "LANE SWITCHER",
-          description: "A smooth step between two lanes of motion."
-        };
-      }
-
-      if (preset.formulaKind === "arch") {
-        return {
-          equation: `y = ${a}(e^(${b}(x - ${c})) + e^(-${b}(x - ${c}))) + ${Number(coefficients.k ?? 0)}`,
-          title: "DEEP DIVE",
-          description: "A U-shaped valley that dives and returns sharply."
-        };
-      }
-
-      return {
-        equation: `y = ${a}e^(-${b}(x - ${Number(coefficients.h ?? 0)})) + ${Number(coefficients.k ?? 0)}`,
-        title: "HOOK SHOT",
-        description: "A fast hook with a dramatic snap into a flat glide."
-      };
-    }
-
     return {
-      equation: `y = ${a}sin(${b}x) + ${c}`,
-      title: "TRIG EQUATION",
-      description: "Wave patterns that rise and fall in cycles."
+      equation: getStage3Equation(preset),
+      inverseEquation: getStage3Equation(preset, true),
+      title: preset.title,
+      description: preset.description
     };
   };
 
@@ -72,26 +30,8 @@ export default function Stage3({ setScreen, onEditPreset, onAddEquation, onConti
       <main className="preset-container">
         <div className="stage-heading">
           <span>STAGE 3</span>
-          <h1>LOGARITHMIC FUNCTIONS</h1>
-          <p>Choose a logarithmic preset equation to study its graph.</p>
-        </div>
-
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-          <button
-            type="button"
-            onClick={onAddEquation}
-            style={{
-              padding: "10px 16px",
-              borderRadius: 8,
-              border: "none",
-              background: "#f59e0b",
-              color: "#111827",
-              fontWeight: 700,
-              cursor: "pointer"
-            }}
-          >
-            Add Equation
-          </button>
+          <h1>EXPONENTIALS + INVERSE LOGS</h1>
+          <p>Compare each exponential curve with its inverse logarithm.</p>
         </div>
 
         <div className="preset-grid">
@@ -103,6 +43,7 @@ export default function Stage3({ setScreen, onEditPreset, onAddEquation, onConti
                 <div className="preset-content">
                   <span className="preset-number">PRESET {index + 1}</span>
                   <h2>{summary.equation}</h2>
+                  <p><strong>Inverse:</strong> {summary.inverseEquation}</p>
                   <h3>{summary.title}</h3>
                   <p>{summary.description}</p>
 
@@ -122,25 +63,11 @@ export default function Stage3({ setScreen, onEditPreset, onAddEquation, onConti
           })}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 24, marginBottom: 24 }}>
-          <button
-            type="button"
-            onClick={onContinue}
-            style={{
-              padding: "12px 28px",
-              borderRadius: 10,
-              border: "none",
-              background: "#22c55e",
-              color: "#052e16",
-              fontWeight: 700,
-              cursor: "pointer",
-              minWidth: 180,
-              position: "fixed",
-              bottom: "20px",       /* Distance from the bottom of the screen */
-              right: "auto",       /* Distance from the right of the screen */
-              zIndex: 1000,         /* Ensures it stays on top of other content */
-            }}
-          >
+        <div className="stage-actions">
+          <button type="button" className="add-equation-btn" onClick={onAddEquation}>
+            + Add Equation
+          </button>
+          <button type="button" className="continue-btn" onClick={onContinue}>
             Continue
           </button>
         </div>

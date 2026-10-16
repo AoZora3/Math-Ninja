@@ -26,7 +26,7 @@ const SLIDES = [
         imageSrc: Stages,
         imageAlt: "Stages",
         title: "Select a Stage",
-        description: "Each Stage represent different function. Progress through Algebraic, Trigonometric, Logarithmic, and Exponential stages — each one throws new curves at you.",
+        description: "Progress through algebraic, trigonometric, logarithmic, and exponential equations across three stages.",
         accentColor: " #f7b824",
     },
     {

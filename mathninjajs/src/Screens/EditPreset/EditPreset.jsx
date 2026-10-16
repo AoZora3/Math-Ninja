@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import PresetCard from '../../Components/PresetCards.jsx';
 import MathGraph from '../Gameplay/MathGraph';
+import { getTrigonometricEquation } from '../../Game/Equations/EquationText.js';
+import { getStage3Equation } from '../../Game/Equations/Stage3Equation.js';
 
 const formatNumber = (value) => {
   const rounded = Number(value);
@@ -13,27 +15,20 @@ const buildEquationString = (preset) => {
 
   const a = Number(preset.coefficients?.a ?? 0);
   const b = Number(preset.coefficients?.b ?? 0);
-  const c = Number(preset.coefficients?.c ?? 0);
-  const d = Number(preset.coefficients?.d ?? 0);
-
+  if (preset.type === 'exponential' && preset.inverseFn) {
+    return getStage3Equation(preset);
+  }
   if (preset.type === 'trigonometric') {
-    if (preset.waveType === 'classic') {
-      return `y = ${formatNumber(a)}sin(${formatNumber(b)}x)`;
-    }
-
-    if (preset.waveType === 'multi') {
-      return `y = ${formatNumber(a)}sin(${formatNumber(b)}x) + ${formatNumber(c)}sin(${formatNumber(d)}x)`;
-    }
-
-    if (preset.waveType === 'damped') {
-      return `y = ${formatNumber(a)}sin(${formatNumber(b)}x) * exp(-${formatNumber(c)}x)`;
-    }
-
-    return `y = ${formatNumber(a)}tan(${formatNumber(b)}x)`;
+    return getTrigonometricEquation(preset);
   }
 
   if (preset.type === 'quadratic') {
     return `y = ${formatNumber(a)}x² ${b >= 0 ? '+' : '-'} ${formatNumber(Math.abs(b))}`;
+  }
+
+  // Preserve cubic notation while coefficients are edited.
+  if (preset.type === 'cubic') {
+    return `y = ${formatNumber(a)}x³ ${b >= 0 ? '+' : '-'} ${formatNumber(Math.abs(b))}`;
   }
 
   return `y = ${formatNumber(a)}x ${b >= 0 ? '+' : '-'} ${formatNumber(Math.abs(b))}`;
@@ -72,8 +67,12 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
       ...preset,
       id: preset.id || `preset-${Date.now()}`,
       title:
-        preset.type === 'quadratic'
-          ? 'QUADRATIC EQUATION'
+        preset.type === 'exponential' && preset.inverseFn
+          ? preset.title
+          : preset.type === 'cubic'
+          ? 'CUBIC EQUATION'
+          : preset.type === 'quadratic'
+            ? 'QUADRATIC EQUATION'
           : preset.type === 'trigonometric'
             ? (preset.waveType === 'classic'
                 ? 'CLASSIC WAVE'
@@ -84,8 +83,12 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
                     : 'TELEPORTING RAMP')
             : 'LINEAR EQUATION',
       description:
-        preset.type === 'quadratic'
-          ? 'A curved graph with a vertical stretch and shift.'
+        preset.type === 'exponential' && preset.inverseFn
+          ? preset.description
+          : preset.type === 'cubic'
+          ? 'An S-shaped graph with adjustable stretch and vertical shift.'
+          : preset.type === 'quadratic'
+            ? 'A curved graph with a vertical stretch and shift.'
           : preset.type === 'trigonometric'
             ? (preset.waveType === 'classic'
                 ? 'Smooth repeating motion with a fixed ceiling and floor.'
@@ -102,12 +105,16 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
   }
 
   return (
-    <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
-      <header className="header" style={{ marginBottom: 12 }}>
+    <div className="screen edit-preset-screen">
+      <header className="header edit-preset-header">
         <button className="back-button" onClick={onBack}>←</button>
         <h2>{
-          preset.type === 'quadratic'
-            ? 'EDIT QUADRATIC'
+          preset.type === 'exponential' && preset.inverseFn
+            ? `EDIT ${preset.title}`
+            : preset.type === 'cubic'
+            ? 'EDIT CUBIC'
+            : preset.type === 'quadratic'
+              ? 'EDIT QUADRATIC'
             : preset.type === 'trigonometric'
               ? (preset.waveType === 'classic'
                   ? 'EDIT CLASSIC WAVE'
@@ -121,49 +128,37 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
         <div className="header-spacer"></div>
       </header>
 
-      <div style={{ marginBottom: 16 }}>
-        <MathGraph activePreset={preset} />
-      </div>
+      <main className="edit-preset-content">
+        <section className="edit-preset-preview" aria-label="Equation preview">
+          <div className="edit-preset-graph">
+            <MathGraph activePreset={preset} width={320} height={260} />
+          </div>
 
-      <div style={{
-        marginBottom: 16,
-        padding: '10px 12px',
-        background: '#f3f4f6',
-        borderRadius: 8,
-        fontWeight: 700,
-        textAlign: 'center',
-        color: '#111827'
-      }}>
-        {buildEquationString(preset)}
-      </div>
+          <div className="edit-preset-equation">
+            {buildEquationString(preset)}
+          </div>
+        </section>
 
-      <PresetCard preset={preset} onChange={handleChange} />
+        <PresetCard preset={preset} onChange={handleChange} />
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 20, justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          onClick={onBack}
-          style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #d1d5db' }}
-        >
-          Cancel
-        </button>
+        <div className="edit-preset-actions">
+          <button
+            type="button"
+            onClick={onBack}
+            className="edit-preset-cancel"
+          >
+            Cancel
+          </button>
 
-        <button
-          type="button"
-          onClick={handleSave}
-          style={{
-            padding: '10px 16px',
-            borderRadius: 8,
-            border: 'none',
-            background: '#2563eb',
-            color: 'white',
-            fontWeight: 700,
-            cursor: 'pointer'
-          }}
-        >
-          Save Preset
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="edit-preset-save"
+          >
+            Save Preset
+          </button>
+        </div>
+      </main>
     </div>
   );
 }

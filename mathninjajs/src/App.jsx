@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import "./Assets/Styles/App.css";
 import TitleScreen from "./Screens/TitleScreen/TitleScreen.jsx";
 
@@ -6,7 +6,6 @@ import StageSelect from "./Screens/StageSelect/StageSelect.jsx";
 import Stage1 from "./Screens/StageSelect/Stage1.jsx";
 import Stage2 from "./Screens/StageSelect/Stage2.jsx";
 import Stage3 from "./Screens/StageSelect/Stage3.jsx";
-import Stage4 from "./Screens/StageSelect/Stage4.jsx";
 
 import EditPreset from "./Screens/EditPreset/EditPreset.jsx";
 import EquationTypeSelect from "./Screens/EquationTypeSelect/EquationTypeSelect.jsx";
@@ -17,7 +16,22 @@ import { GameContext, GameProvider } from "./Context/GameContext.jsx";
 import { stage1Presets } from "./Game/Equations/StagePreset1.js";
 import { stage2Presets } from "./Game/Equations/StagePreset2.js";
 import { stage3Presets } from "./Game/Equations/StagePreset3.js";
-import { stage4Presets } from "./Game/Equations/StagePreset4.js";
+
+// Step 4 represents the Endless card; progress is stored locally on this device.
+const PROGRESSION_STORAGE_KEY = "mathNinjaUnlockedStep";
+const FINAL_UNLOCKED_STEP = 4;
+
+// Ignore invalid or unavailable saved values and begin with only Stage 1 unlocked.
+function readUnlockedStep() {
+  try {
+    const savedStep = Number(window.localStorage.getItem(PROGRESSION_STORAGE_KEY));
+    return Number.isInteger(savedStep) && savedStep >= 1 && savedStep <= FINAL_UNLOCKED_STEP
+      ? savedStep
+      : 1;
+  } catch {
+    return 1;
+  }
+}
 
 function createPresetByType(type) {
   const baseId = `${type}-${Date.now()}`;
@@ -33,6 +47,21 @@ function createPresetByType(type) {
       coefficients: { a: 2, b: 1 },
       minMax: { a: [-5, 5], b: [-5, 5] },
       fn: (x, c) => c.a * x + c.b
+    };
+  }
+
+  // Stage 1 supports adding the requested cubic family alongside line and parabola.
+  if (type === "cubic") {
+    return {
+      id: baseId,
+      type: "cubic",
+      label: "y = ax³ + b",
+      equation: "y = x³",
+      title: "CUBIC EQUATION",
+      description: "An S-shaped graph with adjustable stretch and vertical shift.",
+      coefficients: { a: 1, b: 0 },
+      minMax: { a: [-2, 2], b: [-5, 5] },
+      fn: (x, c) => c.a * x * x * x + c.b
     };
   }
 
@@ -65,16 +94,11 @@ function createPresetByType(type) {
   }
 
   if (type === "exponential") {
+    // Added Stage 3 equations keep the same exponential/inverse-log relationship.
     return {
+      ...stage3Presets[0],
       id: baseId,
-      type: "exponential",
-      label: "y = A * exp(-B * (x - H)) + K",
-      equation: "y = 2 * exp(-1.5 * (x - 1)) + 0",
-      title: "HOOK SHOT",
-      description: "A steep hook that glides flat before snapping up.",
-      coefficients: { a: 2, b: 1.5, h: 1, k: 0 },
-      minMax: { a: [0, 5], b: [0.2, 4], h: [-5, 5], k: [-5, 5] },
-      fn: (x, c) => (c.a ?? 1) * Math.exp(-(c.b ?? 1) * (x - (c.h ?? 0))) + (c.k ?? 0)
+      coefficients: { ...stage3Presets[0].coefficients }
     };
   }
 
@@ -100,27 +124,53 @@ function AppContent() {
     startGameplay,
     musicVolume,
     setMusicVolume,
+    sfxVolume,
+    setSfxVolume,
     startBackgroundMusic
   } = useContext(GameContext);
   const [screen, setScreen] = useState("splash");
   const [editingPreset, setEditingPreset] = useState(null);
   const [currentStage, setCurrentStage] = useState("stage1");
   const [showGettingStarted, setShowGettingStarted] = useState(true);
+  const [unlockedStep, setUnlockedStep] = useState(readUnlockedStep);
+
+  // Persist unlock progress independently from settings and other game data.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PROGRESSION_STORAGE_KEY, String(unlockedStep));
+    } catch {
+      // Keep the session playable when local storage is unavailable.
+    }
+  }, [unlockedStep]);
 
   const goToStage = (stageName) => {
+    const requestedStep = { stage1: 1, stage2: 2, stage3: 3 }[stageName];
+    if (!requestedStep || requestedStep > unlockedStep) return;
+
+    // Stage 3 now owns both logarithmic and exponential preset collections.
     const nextPresets =
       stageName === "stage2"
         ? stage2Presets
         : stageName === "stage3"
           ? stage3Presets
-          : stageName === "stage4"
-            ? stage4Presets
-            : stage1Presets;
+          : stage1Presets;
     setCurrentStage(stageName);
     setPresets(nextPresets);
     setActivePreset(nextPresets[0]);
     setScreen(stageName);
   };
+
+  // A win only advances the furthest unlocked step, never moving progress backward.
+  const handleStageWin = () => {
+    const completedStep = { stage1: 1, stage2: 2, stage3: 3 }[currentStage];
+    if (completedStep) {
+      setUnlockedStep((currentStep) => Math.max(currentStep, completedStep + 1));
+    }
+  };
+
+  // Reset progression only; existing settings and other saved data are preserved.
+  const resetProgress = () => setUnlockedStep(1);
+  const unlockAllStages = () => setUnlockedStep(FINAL_UNLOCKED_STEP);
 
   const openEditPreset = (preset) => {
     setActivePreset(preset);
@@ -159,6 +209,10 @@ function AppContent() {
         setScreen={setScreen}
         musicVolume={musicVolume}
         onMusicVolumeChange={setMusicVolume}
+        sfxVolume={sfxVolume}
+        onSfxVolumeChange={setSfxVolume}
+        onResetProgress={resetProgress}
+        onUnlockAllStages={unlockAllStages}
         onStart={() => {
           startBackgroundMusic();
           setScreen("stageSelect");
@@ -172,8 +226,10 @@ function AppContent() {
       <StageSelect
         screen={screen}
         setScreen={goToStage}
+        onBack={() => setScreen("splash")}
         showOnboarding={showGettingStarted}
         setShowOnboarding={setShowGettingStarted}
+        unlockedStep={unlockedStep}
       />
     );
   }
@@ -215,18 +271,6 @@ function AppContent() {
     );
   }
 
-  if (screen === "stage4") {
-    return (
-      <Stage4
-        presets={presets}
-        setScreen={setScreen}
-        onEditPreset={openEditPreset}
-        onAddEquation={() => setScreen("selectEquationType")}
-        onContinue={handleContinue}
-      />
-    );
-  }
-
   if (screen === "selectEquationType") {
     return (
       <EquationTypeSelect
@@ -234,10 +278,8 @@ function AppContent() {
           currentStage === "stage2"
             ? ["trigonometric"]
             : currentStage === "stage3"
-              ? ["logarithmic"]
-              : currentStage === "stage4"
-                ? ["exponential"]
-                : ["quadratic", "linear"]
+              ? ["exponential"]
+                : ["linear", "quadratic", "cubic"]
         }
         onBack={() => setScreen(currentStage)}
         onSelectType={(type) => {
@@ -259,10 +301,13 @@ function AppContent() {
   }
 
   if (screen === "gameplay") {
-    return <Gameplay onBack={() => {
-      setCurrentScreen(currentStage);
-      setScreen(currentStage);
-    }} />;
+    return <Gameplay
+      onBack={() => {
+        setCurrentScreen(currentStage);
+        setScreen(currentStage);
+      }}
+      onWin={handleStageWin}
+    />;
   }
 
   return null;

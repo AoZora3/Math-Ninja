@@ -1,5 +1,6 @@
 import { useContext } from "react";
 import { GameContext } from "../../Context/GameContext.jsx";
+import "../../Assets/Styles/Stages.css";
 
 export default function Stage1({ setScreen, onEditPreset, onAddEquation, onContinue }) {
   const { presets, setActivePreset } = useContext(GameContext);
@@ -8,6 +9,15 @@ export default function Stage1({ setScreen, onEditPreset, onAddEquation, onConti
     const coefficients = preset.coefficients || { a: 1, b: 0 };
     const a = Number(coefficients.a ?? 1);
     const b = Number(coefficients.b ?? 0);
+
+    // Stage 1 includes a cubic preset in addition to line and parabola presets.
+    if (preset.type === "cubic") {
+      return {
+        equation: `y = ${a}x³ ${b >= 0 ? '+' : '-'} ${Math.abs(b)}`,
+        title: "CUBIC EQUATION",
+        description: "An S-shaped graph with adjustable stretch and vertical shift."
+      };
+    }
 
     if (preset.type === "quadratic") {
       return {
@@ -43,24 +53,6 @@ export default function Stage1({ setScreen, onEditPreset, onAddEquation, onConti
           <p>Choose a preset equation to study its graph.</p>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-          <button
-            type="button"
-            onClick={onAddEquation}
-            style={{
-              padding: "10px 16px",
-              borderRadius: 8,
-              border: "none",
-              background: "#f59e0b",
-              color: "#111827",
-              fontWeight: 700,
-              cursor: "pointer"
-            }}
-          >
-            Add Equation
-          </button>
-        </div>
-
         <div className="preset-grid">
           {presets.map((preset, index) => {
             const summary = getPresetSummary(preset);
@@ -90,25 +82,11 @@ export default function Stage1({ setScreen, onEditPreset, onAddEquation, onConti
           })}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 24, marginBottom: 24 }}>
-          <button
-            type="button"
-            onClick={onContinue}
-            style={{
-              padding: "12px 28px",
-              borderRadius: 10,
-              border: "none",
-              background: "#22c55e",
-              color: "#052e16",
-              fontWeight: 700,
-              cursor: "pointer",
-              minWidth: 180,
-              position: "fixed",
-              bottom: "20px",       /* Distance from the bottom of the screen */
-              right: "auto",       /* Distance from the right of the screen */
-              zIndex: 1000,         /* Ensures it stays on top of other content */
-            }}
-          >
+        <div className="stage-actions">
+          <button type="button" className="add-equation-btn" onClick={onAddEquation}>
+            + Add Equation
+          </button>
+          <button type="button" className="continue-btn" onClick={onContinue}>
             Continue
           </button>
         </div>

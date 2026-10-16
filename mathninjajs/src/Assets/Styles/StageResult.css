@@ -15,6 +15,19 @@
     linear-gradient(145deg, #171a25 0%, #29202b 58%, #25252b 100%);
 }
 
+.pause-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  min-height: 100vh;
+  padding: 24px;
+  background: rgba(8, 14, 22, 0.82);
+}
+
+.pause-panel h1 {
+  font-size: 36px;
+}
+
 .result-panel {
   width: min(100%, 520px);
   padding: clamp(24px, 6vw, 48px);

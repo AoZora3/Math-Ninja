@@ -1,6 +1,8 @@
 export default function EquationTypeSelect({ onSelectType, onBack, allowedTypes = ['quadratic', 'linear'] }) {
   const typeLabels = {
     quadratic: 'Quadratic',
+    // Cubic is an additional polynomial option for Stage 1 presets.
+    cubic: 'Cubic',
     linear: 'Linear',
     trigonometric: 'Trigonometric',
     logarithmic: 'Logarithmic',
