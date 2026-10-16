@@ -1,5 +1,5 @@
-import { useContext, useState } from "react";
-import "./Assets/Styles/App.css";
+import React, { useContext, useState } from "react";
+import { View, StyleSheet } from "react-native";
 import TitleScreen from "./Screens/TitleScreen/TitleScreen.jsx";
 
 import StageSelect from "./Screens/StageSelect/StageSelect.jsx";
@@ -152,120 +152,107 @@ function AppContent() {
     setScreen("gameplay");
   };
 
-  if (screen === "splash" || screen === "settings") {
-    return (
-      <TitleScreen
-        screen={screen}
-        setScreen={setScreen}
-        musicVolume={musicVolume}
-        onMusicVolumeChange={setMusicVolume}
-        onStart={() => {
-          startBackgroundMusic();
-          setScreen("stageSelect");
-        }}
-      />
-    );
-  }
+  return (
+    <View style={styles.container}>
+      {(screen === "splash" || screen === "settings") && (
+        <TitleScreen
+          screen={screen}
+          setScreen={setScreen}
+          musicVolume={musicVolume}
+          onMusicVolumeChange={setMusicVolume}
+          onStart={() => {
+            startBackgroundMusic();
+            setScreen("stageSelect");
+          }}
+        />
+      )}
 
-  if (screen === "stageSelect") {
-    return (
-      <StageSelect
-        screen={screen}
-        setScreen={goToStage}
-        showOnboarding={showGettingStarted}
-        setShowOnboarding={setShowGettingStarted}
-      />
-    );
-  }
+      {screen === "stageSelect" && (
+        <StageSelect
+          screen={screen}
+          setScreen={goToStage}
+          showOnboarding={showGettingStarted}
+          setShowOnboarding={setShowGettingStarted}
+        />
+      )}
 
-  if (screen === "stage1") {
-    return (
-      <Stage1
-        presets={presets}
-        setScreen={setScreen}
-        onEditPreset={openEditPreset}
-        onAddEquation={() => setScreen("selectEquationType")}
-        onContinue={handleContinue}
-        
-      />
-    );
-  }
+      {screen === "stage1" && (
+        <Stage1
+          presets={presets}
+          setScreen={setScreen}
+          onEditPreset={openEditPreset}
+          onAddEquation={() => setScreen("selectEquationType")}
+          onContinue={handleContinue}
+        />
+      )}
 
-  if (screen === "stage2") {
-    return (
-      <Stage2
-        presets={presets}
-        setScreen={setScreen}
-        onEditPreset={openEditPreset}
-        onAddEquation={() => setScreen("selectEquationType")}
-        onContinue={handleContinue}
-      />
-    );
-  }
+      {screen === "stage2" && (
+        <Stage2
+          presets={presets}
+          setScreen={setScreen}
+          onEditPreset={openEditPreset}
+          onAddEquation={() => setScreen("selectEquationType")}
+          onContinue={handleContinue}
+        />
+      )}
 
-  if (screen === "stage3") {
-    return (
-      <Stage3
-        presets={presets}
-        setScreen={setScreen}
-        onEditPreset={openEditPreset}
-        onAddEquation={() => setScreen("selectEquationType")}
-        onContinue={handleContinue}
-      />
-    );
-  }
+      {screen === "stage3" && (
+        <Stage3
+          presets={presets}
+          setScreen={setScreen}
+          onEditPreset={openEditPreset}
+          onAddEquation={() => setScreen("selectEquationType")}
+          onContinue={handleContinue}
+        />
+      )}
 
-  if (screen === "stage4") {
-    return (
-      <Stage4
-        presets={presets}
-        setScreen={setScreen}
-        onEditPreset={openEditPreset}
-        onAddEquation={() => setScreen("selectEquationType")}
-        onContinue={handleContinue}
-      />
-    );
-  }
+      {screen === "stage4" && (
+        <Stage4
+          presets={presets}
+          setScreen={setScreen}
+          onEditPreset={openEditPreset}
+          onAddEquation={() => setScreen("selectEquationType")}
+          onContinue={handleContinue}
+        />
+      )}
 
-  if (screen === "selectEquationType") {
-    return (
-      <EquationTypeSelect
-        allowedTypes={
-          currentStage === "stage2"
-            ? ["trigonometric"]
-            : currentStage === "stage3"
-              ? ["logarithmic"]
-              : currentStage === "stage4"
-                ? ["exponential"]
-                : ["quadratic", "linear"]
-        }
-        onBack={() => setScreen(currentStage)}
-        onSelectType={(type) => {
-          setEditingPreset(createPresetByType(type));
-          setScreen("editPreset");
-        }}
-      />
-    );
-  }
+      {screen === "selectEquationType" && (
+        <EquationTypeSelect
+          allowedTypes={
+            currentStage === "stage2"
+              ? ["trigonometric"]
+              : currentStage === "stage3"
+                ? ["logarithmic"]
+                : currentStage === "stage4"
+                  ? ["exponential"]
+                  : ["quadratic", "linear"]
+          }
+          onBack={() => setScreen(currentStage)}
+          onSelectType={(type) => {
+            setEditingPreset(createPresetByType(type));
+            setScreen("editPreset");
+          }}
+        />
+      )}
 
-  if (screen === "editPreset") {
-    return (
-      <EditPreset
-        currentPreset={editingPreset}
-        onBack={() => setScreen(currentStage)}
-        onSave={savePreset}
-      />
-    );
-  }
+      {screen === "editPreset" && (
+        <EditPreset
+          currentPreset={editingPreset}
+          onBack={() => setScreen(currentStage)}
+          onSave={savePreset}
+        />
+      )}
 
-  if (screen === "gameplay") {
-    return <Gameplay onBack={() => {
-      setCurrentScreen(currentStage);
-      setScreen(currentStage);
-    }} />;
-  }
-
-  return null;
+      {screen === "gameplay" && (
+        <Gameplay
+          onBack={() => {
+            setCurrentScreen(currentStage);
+            setScreen(currentStage);
+          }}
+        />
+      )}
+    </View>
+  );
 }
 
 export default function App() {
@@ -275,3 +262,9 @@ export default function App() {
     </GameProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
