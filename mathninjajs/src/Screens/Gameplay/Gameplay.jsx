@@ -4,8 +4,18 @@ import Combo from '../../Components/Combo.jsx';
 import Timer from '../../Components/Timer.jsx';
 import StageResult from '../StageResult/StageResult.jsx';
 import { GAME_DURATION_SECONDS, GOAL_SCORE } from '../../Context/GameContext.jsx';
+<<<<<<< HEAD
 import { getTrigonometricEquation } from '../../Game/Equations/EquationText.js';
 import { getStage3Equation } from '../../Game/Equations/Stage3Equation.js';
+=======
+/*added import statements for sprites and apple rain*/
+import appleSlicedSprite from '../../Assets/Sprites/Apple_Sliced_Sprite.png';
+import appleSprite from '../../Assets/Sprites/Apple_Sprite.png';
+import bombExplosionSprite from '../../Assets/Sprites/Bomb_Explosion_Sprite.png';
+import bombSprite from '../../Assets/Sprites/Bomb_Sprite.png';
+import AppleRain from './AppleRain.jsx';
+/*end of added import statements for sprites and apple rain*/
+>>>>>>> origin/90%-Progression-Saving-Pause
 import '../../Assets/Styles/Gameplay.css';
 
 const POLYNOMIAL_TYPE_CYCLE = ['linear', 'quadratic', 'cubic'];
@@ -86,6 +96,7 @@ export default function Gameplay({ onBack, onWin }) {
   const [firedEquation, setFiredEquation] = useState(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(true);
   const [isInverted, setIsInverted] = useState(false);
+<<<<<<< HEAD
   const winHandled = useRef(false);
   const resultState = lives <= 0 || timeLeft <= 0 ? 'lost' : score >= GOAL_SCORE ? 'won' : null;
 
@@ -101,6 +112,16 @@ export default function Gameplay({ onBack, onWin }) {
       onWin?.();
     }
   }, [resultState, onWin]);
+=======
+  const [slicedFruitObjects, setSlicedFruitObjects] = useState([]);
+  const [explodedBombObjects, setExplodedBombObjects] = useState([]);
+  const slicedFruitTimeouts = useRef(new Set());
+  const resultState = lives <= 0 || timeLeft <= 0 ? 'lost' : score >= GOAL_SCORE ? 'won' : null;
+
+  useEffect(() => () => {
+    slicedFruitTimeouts.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+  }, []);
+>>>>>>> origin/90%-Progression-Saving-Pause
 
   useEffect(() => {
     if (!firedEquation) return undefined;
@@ -165,7 +186,25 @@ export default function Gameplay({ onBack, onWin }) {
       preset: chosen,
       id: (current?.id || 0) + 1
     }));
-    fireEquationStrike(chosen);
+    const { slicedFruits, explodedBombs } = fireEquationStrike(chosen);
+    if (slicedFruits.length > 0) {
+      setSlicedFruitObjects((current) => [...current, ...slicedFruits]);
+      const slicedFruitIds = new Set(slicedFruits.map((fruit) => fruit.id));
+      const timeoutId = window.setTimeout(() => {
+        setSlicedFruitObjects((current) => current.filter((fruit) => !slicedFruitIds.has(fruit.id)));
+        slicedFruitTimeouts.current.delete(timeoutId);
+      }, 500);
+      slicedFruitTimeouts.current.add(timeoutId);
+    }
+    if (explodedBombs.length > 0) {
+      setExplodedBombObjects((current) => [...current, ...explodedBombs]);
+      const explodedBombIds = new Set(explodedBombs.map((bomb) => bomb.id));
+      const timeoutId = window.setTimeout(() => {
+        setExplodedBombObjects((current) => current.filter((bomb) => !explodedBombIds.has(bomb.id)));
+        slicedFruitTimeouts.current.delete(timeoutId);
+      }, 500);
+      slicedFruitTimeouts.current.add(timeoutId);
+    }
   };
 
   const handlePreviewEquation = (preset) => {
@@ -218,6 +257,7 @@ export default function Gameplay({ onBack, onWin }) {
 
   return (
     <div className="gameplay-shell">
+<<<<<<< HEAD
       {isPaused && (
         <div className="result-screen pause-screen">
           <section className="result-panel pause-panel" role="dialog" aria-modal="true" aria-labelledby="pause-title">
@@ -231,6 +271,10 @@ export default function Gameplay({ onBack, onWin }) {
           </section>
         </div>
       )}
+=======
+      <AppleRain />
+
+>>>>>>> origin/90%-Progression-Saving-Pause
       <header className="gameplay-topbar">
         <div className="score-block">
           <span className="hud-label">SCORE</span>
@@ -316,23 +360,44 @@ export default function Gameplay({ onBack, onWin }) {
             </g>
           </svg>
 
-          {spawnedObjects.map((obj) => {
+          {[
+            ...spawnedObjects.map((obj) => ({ obj, isSliced: false })),
+            ...slicedFruitObjects.map((obj) => ({ obj, isSliced: true, isExploded: false })),
+            ...explodedBombObjects.map((obj) => ({ obj, isSliced: false, isExploded: true }))
+          ].map(({ obj, isSliced, isExploded = false }) => {
             const isFruit = obj.type === 'fruit';
             const left = ((obj.x + 10) / 20) * 100;
             const top = 100 - ((obj.y + 10) / 20) * 100;
+<<<<<<< HEAD
             // Stable object ids keep each fruit's emoji consistent for its lifetime.
             const fruitEmoji = FRUIT_EMOJIS[
               Math.abs(Math.floor(Number(obj.id) * 100000)) % FRUIT_EMOJIS.length
             ] || FRUIT_EMOJIS[0];
+=======
+            const targetName = isSliced ? 'Sliced apple' : isExploded ? 'Bomb explosion' : isFruit ? 'Apple' : 'Bomb';
+>>>>>>> origin/90%-Progression-Saving-Pause
 
             return (
               <div
                 key={obj.id}
-                className={`spawned-target ${isFruit ? 'fruit' : 'bomb'}`}
+                className={`spawned-target ${isFruit ? 'fruit' : 'bomb'}${isSliced ? ' sliced' : ''}${isExploded ? ' exploded' : ''}`}
                 style={{ left: `${left}%`, top: `${top}%` }}
+<<<<<<< HEAD
                 title={isFruit ? 'Fruit' : 'Bomb'}
               >
                 {isFruit ? fruitEmoji : '💣'}
+=======
+                title={targetName}
+                role="img"
+                aria-label={targetName}
+              >
+                <img
+                  src={isSliced ? appleSlicedSprite : isExploded ? bombExplosionSprite : isFruit ? appleSprite : bombSprite}
+                  alt=""
+                  aria-hidden="true"
+                  draggable="false"
+                />
+>>>>>>> origin/90%-Progression-Saving-Pause
               </div>
             );
           })}
@@ -405,4 +470,3 @@ export default function Gameplay({ onBack, onWin }) {
     </div>
   );
 }
-

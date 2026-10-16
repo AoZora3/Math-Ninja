@@ -7,15 +7,15 @@ export default function PresetCard({ preset, onChange }) {
   const minMax = safePreset.minMax || { a: [-5, 5], b: [-5, 5] };
 
   return (
-    <div style={{ border: '1px solid #ccc', padding: 12, marginBottom: 12, borderRadius: 10 }}>
-      <p style={{ margin: '0 0 12px', fontWeight: 700 }}>{safePreset.label || 'Preset'}</p>
+    <section className="edit-preset-controls" aria-label="Equation settings">
+      <p className="edit-preset-label">{safePreset.label || 'Preset'}</p>
       {Object.keys(coefficients).map(key => {
         const currentValue = Number(coefficients[key] ?? 0);
         const bounds = minMax[key] || [-5, 5];
 
         return (
-          <label key={key} style={{ display: 'block', marginBottom: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+          <label key={key} className="edit-preset-slider">
+            <div className="edit-preset-slider-heading">
               <span>{key}</span>
               <strong>{formatSliderValue(currentValue)}</strong>
             </div>
@@ -26,11 +26,10 @@ export default function PresetCard({ preset, onChange }) {
               step={sliderStep}
               value={currentValue}
               onChange={e => onChange?.(safePreset.id, key, Number.parseFloat(Number(e.target.value).toFixed(2)))}
-              style={{ width: '100%' }}
             />
           </label>
         );
       })}
-    </div>
+    </section>
   );
 }

@@ -105,8 +105,8 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
   }
 
   return (
-    <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
-      <header className="header" style={{ marginBottom: 12 }}>
+    <div className="screen edit-preset-screen">
+      <header className="header edit-preset-header">
         <button className="back-button" onClick={onBack}>←</button>
         <h2>{
           preset.type === 'exponential' && preset.inverseFn
@@ -128,49 +128,37 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
         <div className="header-spacer"></div>
       </header>
 
-      <div style={{ marginBottom: 16 }}>
-        <MathGraph activePreset={preset} />
-      </div>
+      <main className="edit-preset-content">
+        <section className="edit-preset-preview" aria-label="Equation preview">
+          <div className="edit-preset-graph">
+            <MathGraph activePreset={preset} width={320} height={260} />
+          </div>
 
-      <div style={{
-        marginBottom: 16,
-        padding: '10px 12px',
-        background: '#f3f4f6',
-        borderRadius: 8,
-        fontWeight: 700,
-        textAlign: 'center',
-        color: '#111827'
-      }}>
-        {buildEquationString(preset)}
-      </div>
+          <div className="edit-preset-equation">
+            {buildEquationString(preset)}
+          </div>
+        </section>
 
-      <PresetCard preset={preset} onChange={handleChange} />
+        <PresetCard preset={preset} onChange={handleChange} />
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 20, justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          onClick={onBack}
-          style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #d1d5db' }}
-        >
-          Cancel
-        </button>
+        <div className="edit-preset-actions">
+          <button
+            type="button"
+            onClick={onBack}
+            className="edit-preset-cancel"
+          >
+            Cancel
+          </button>
 
-        <button
-          type="button"
-          onClick={handleSave}
-          style={{
-            padding: '10px 16px',
-            borderRadius: 8,
-            border: 'none',
-            background: '#2563eb',
-            color: 'white',
-            fontWeight: 700,
-            cursor: 'pointer'
-          }}
-        >
-          Save Preset
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="edit-preset-save"
+          >
+            Save Preset
+          </button>
+        </div>
+      </main>
     </div>
   );
 }
