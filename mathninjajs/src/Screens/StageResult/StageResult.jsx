@@ -7,9 +7,11 @@ export function calculateStars({ won, lives, hitRate, elapsedSeconds }) {
 	return Number(lives > 1) + Number(hitRate >= 80) + Number(elapsedSeconds <= 120);
 }
 
-export default function StageResult({ won, score, lives, hitRate, elapsedSeconds, onRetry, onBack }) {
+export default function StageResult({ won, score, lives, hitRate, elapsedSeconds, isEndless = false, onRetry, onBack }) {
 	const stars = calculateStars({ won, lives, hitRate, elapsedSeconds });
-	const resultMessage = won
+	const resultMessage = isEndless
+		? 'The timer ran out. Your endless run is over.'
+		: won
 		? 'Goal reached. Your run is complete.'
 		: lives <= 0
 			? 'You ran out of health before reaching the goal.'
@@ -18,12 +20,12 @@ export default function StageResult({ won, score, lives, hitRate, elapsedSeconds
 	return (
 		<main className={`result-screen ${won ? 'result-win' : 'result-loss'}`}>
 			<section className="result-panel" aria-labelledby="result-title">
-				<p className="result-kicker">RUN COMPLETE</p>
-				<h1 id="result-title">{won ? 'Stage cleared' : 'Game over'}</h1>
+				<p className="result-kicker">{isEndless ? 'ENDLESS RUN COMPLETE' : 'RUN COMPLETE'}</p>
+				<h1 id="result-title">{isEndless ? 'Endless run over' : won ? 'Stage cleared' : 'Game over'}</h1>
 				<p className="result-message">{resultMessage}</p>
 
-				<Stars count={stars} />
-				<p className="result-star-summary">{stars} of 3 stars earned</p>
+				{!isEndless && <Stars count={stars} />}
+				{!isEndless && <p className="result-star-summary">{stars} of 3 stars earned</p>}
 
 				<div className="result-score" aria-label={`Final score ${score} points`}>
 					<span>POINTS</span>
@@ -40,13 +42,13 @@ export default function StageResult({ won, score, lives, hitRate, elapsedSeconds
 						<dd>{Math.floor(hitRate)}%</dd>
 					</div>
 					<div>
-						<dt>Time</dt>
+						<dt>{isEndless ? 'Run time' : 'Time'}</dt>
 						<dd>{Math.floor(elapsedSeconds / 60)}:{String(elapsedSeconds % 60).padStart(2, '0')}</dd>
 					</div>
 				</dl>
 
 				<div className="result-actions">
-					<button type="button" className="result-button secondary" onClick={onBack}>Back to stage</button>
+					<button type="button" className="result-button secondary" onClick={onBack}>{isEndless ? 'Back to Endless' : 'Back to stage'}</button>
 					<button type="button" className="result-button primary" onClick={onRetry}>Play again</button>
 				</div>
 			</section>

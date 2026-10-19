@@ -16,20 +16,43 @@ import { GameContext, GameProvider } from "./Context/GameContext.jsx";
 import { stage1Presets } from "./Game/Equations/StagePreset1.js";
 import { stage2Presets } from "./Game/Equations/StagePreset2.js";
 import { stage3Presets } from "./Game/Equations/StagePreset3.js";
+import { BUILD_CHALLENGE_BY_STAGE } from "./Game/Equations/BuildChallengeData.js";
+import BuildChallenge from "./Screens/BuildChallenge/BuildChallenge.jsx";
+import EndlessMode from "./Screens/EndlessMode/EndlessMode.jsx";
+import { storage } from "./Utils/storage";
 
 // Step 4 represents the Endless card; progress is stored locally on this device.
 const PROGRESSION_STORAGE_KEY = "mathNinjaUnlockedStep";
+const FORMULA_UNLOCK_STORAGE_KEY = "mathNinjaUnlockedFormulas";
 const FINAL_UNLOCKED_STEP = 4;
+const DEFAULT_FORMULA_UNLOCKS = {
+  stage1: ["linear1"],
+  stage2: ["sin-basic"],
+  stage3: ["exp-shift"]
+};
+
+function getDefaultFormulaUnlocks() {
+  return Object.fromEntries(
+    Object.values(DEFAULT_FORMULA_UNLOCKS).flatMap((ids) => ids.map((id) => [id, true]))
+  );
+}
 
 // Ignore invalid or unavailable saved values and begin with only Stage 1 unlocked.
 function readUnlockedStep() {
+  const savedStep = Number(storage.getItem(PROGRESSION_STORAGE_KEY, '1'));
+  return Number.isInteger(savedStep) && savedStep >= 1 && savedStep <= FINAL_UNLOCKED_STEP
+    ? savedStep
+    : 1;
+}
+
+function readUnlockedFormulas() {
+  const rawValue = storage.getItem(FORMULA_UNLOCK_STORAGE_KEY, '{}');
+
   try {
-    const savedStep = Number(window.localStorage.getItem(PROGRESSION_STORAGE_KEY));
-    return Number.isInteger(savedStep) && savedStep >= 1 && savedStep <= FINAL_UNLOCKED_STEP
-      ? savedStep
-      : 1;
+    const parsed = JSON.parse(rawValue);
+    return parsed && typeof parsed === 'object' ? parsed : {};
   } catch {
-    return 1;
+    return {};
   }
 }
 
@@ -115,7 +138,7 @@ function createPresetByType(type) {
   };
 }
 
-function AppContent() {
+function AppContent({ formulaUnlocks, setFormulaUnlocks }) {
   const {
     presets,
     setPresets,
@@ -133,30 +156,31 @@ function AppContent() {
   const [currentStage, setCurrentStage] = useState("stage1");
   const [showGettingStarted, setShowGettingStarted] = useState(true);
   const [unlockedStep, setUnlockedStep] = useState(readUnlockedStep);
+  const [buildChallengeStep, setBuildChallengeStep] = useState(null);
 
   // Persist unlock progress independently from settings and other game data.
   useEffect(() => {
-    try {
-      window.localStorage.setItem(PROGRESSION_STORAGE_KEY, String(unlockedStep));
-    } catch {
-      // Keep the session playable when local storage is unavailable.
-    }
+    storage.setItem(PROGRESSION_STORAGE_KEY, String(unlockedStep));
   }, [unlockedStep]);
 
+  useEffect(() => {
+    storage.setItem(FORMULA_UNLOCK_STORAGE_KEY, JSON.stringify(formulaUnlocks));
+  }, [formulaUnlocks]);
+
   const goToStage = (stageName) => {
-    const requestedStep = { stage1: 1, stage2: 2, stage3: 3 }[stageName];
+    const requestedStep = { stage1: 1, stage2: 2, stage3: 3, endless: 4 }[stageName];
     if (!requestedStep || requestedStep > unlockedStep) return;
 
-    // Stage 3 now owns both logarithmic and exponential preset collections.
-    const nextPresets =
-      stageName === "stage2"
+    const nextPresets = stageName === "endless"
+      ? [...stage1Presets, ...stage2Presets, ...stage3Presets].filter((preset) => formulaUnlocks[preset.id])
+      : stageName === "stage2"
         ? stage2Presets
         : stageName === "stage3"
           ? stage3Presets
           : stage1Presets;
     setCurrentStage(stageName);
     setPresets(nextPresets);
-    setActivePreset(nextPresets[0]);
+    setActivePreset(nextPresets[0] || null);
     setScreen(stageName);
   };
 
@@ -168,14 +192,35 @@ function AppContent() {
     }
   };
 
-  // Reset progression only; existing settings and other saved data are preserved.
-  const resetProgress = () => setUnlockedStep(1);
+  // Reset stage and formula progress while preserving settings and other saved data.
+  const resetProgress = () => {
+    setUnlockedStep(1);
+    setFormulaUnlocks(getDefaultFormulaUnlocks());
+  };
   const unlockAllStages = () => setUnlockedStep(FINAL_UNLOCKED_STEP);
 
   const openEditPreset = (preset) => {
     setActivePreset(preset);
     setEditingPreset(preset);
     setScreen("editPreset");
+  };
+
+  const openBuildChallenge = (stageName) => {
+    const stageNumber = { stage1: 1, stage2: 2, stage3: 3 }[stageName];
+    const steps = BUILD_CHALLENGE_BY_STAGE[stageNumber] || [];
+    const nextStep = steps.find((step) => !formulaUnlocks[step.unlockedPresetId]);
+
+    setCurrentStage(stageName);
+    setBuildChallengeStep(nextStep || null);
+    setScreen(nextStep ? "buildChallenge" : stageName);
+  };
+
+  const completeBuildChallenge = (presetId) => {
+    setFormulaUnlocks((previous) => ({ ...previous, [presetId]: true }));
+    const preset = [...stage1Presets, ...stage2Presets, ...stage3Presets].find((item) => item.id === presetId);
+    if (preset) {
+      setActivePreset(preset);
+    }
   };
 
   const savePreset = (preset) => {
@@ -194,11 +239,11 @@ function AppContent() {
     setScreen(currentStage);
   };
 
-  const handleContinue = () => {
+  const handleContinue = (isEndlessMode = false) => {
     if (presets.length > 0) {
       setActivePreset(presets[0]);
     }
-    startGameplay();
+    startGameplay(isEndlessMode);
     setScreen("gameplay");
   };
 
@@ -242,7 +287,8 @@ function AppContent() {
         onEditPreset={openEditPreset}
         onAddEquation={() => setScreen("selectEquationType")}
         onContinue={handleContinue}
-        
+        onBuildChallenge={openBuildChallenge}
+        isFormulaUnlocked={Boolean(formulaUnlocks[presets[0]?.id])}
       />
     );
   }
@@ -255,6 +301,8 @@ function AppContent() {
         onEditPreset={openEditPreset}
         onAddEquation={() => setScreen("selectEquationType")}
         onContinue={handleContinue}
+        onBuildChallenge={openBuildChallenge}
+        isFormulaUnlocked={Boolean(formulaUnlocks[presets[0]?.id])}
       />
     );
   }
@@ -267,6 +315,31 @@ function AppContent() {
         onEditPreset={openEditPreset}
         onAddEquation={() => setScreen("selectEquationType")}
         onContinue={handleContinue}
+        onBuildChallenge={openBuildChallenge}
+        isFormulaUnlocked={Boolean(formulaUnlocks[presets[0]?.id])}
+      />
+    );
+  }
+
+  if (screen === "endless") {
+    return (
+      <EndlessMode
+        presets={presets}
+        onBack={() => setScreen("stageSelect")}
+        onAddEquation={() => setScreen("selectEquationType")}
+        onStart={() => handleContinue(true)}
+      />
+    );
+  }
+
+  if (screen === "buildChallenge") {
+    return (
+      <BuildChallenge
+        key={buildChallengeStep?.id}
+        step={buildChallengeStep}
+        onBack={() => setScreen(currentStage)}
+        onComplete={completeBuildChallenge}
+        onContinue={() => setScreen(currentStage)}
       />
     );
   }
@@ -279,6 +352,8 @@ function AppContent() {
             ? ["trigonometric"]
             : currentStage === "stage3"
               ? ["exponential"]
+              : currentStage === "endless"
+                ? ["linear", "quadratic", "cubic", "trigonometric", "exponential", "logarithmic"]
                 : ["linear", "quadratic", "cubic"]
         }
         onBack={() => setScreen(currentStage)}
@@ -314,9 +389,14 @@ function AppContent() {
 }
 
 export default function App() {
+  const [formulaUnlocks, setFormulaUnlocks] = useState(() => {
+    const saved = readUnlockedFormulas();
+    return { ...getDefaultFormulaUnlocks(), ...saved };
+  });
+
   return (
-    <GameProvider>
-      <AppContent />
+    <GameProvider formulaUnlocks={formulaUnlocks} setFormulaUnlocks={setFormulaUnlocks}>
+      <AppContent formulaUnlocks={formulaUnlocks} setFormulaUnlocks={setFormulaUnlocks} />
     </GameProvider>
   );
 }

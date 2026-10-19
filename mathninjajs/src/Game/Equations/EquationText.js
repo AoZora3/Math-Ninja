@@ -12,21 +12,19 @@ const signedTerm = (value, term) => {
 export function getTrigonometricEquation(preset) {
   const coefficients = preset?.coefficients || {};
   const a = formatValue(coefficients.a ?? 1);
-  const b = formatValue(coefficients.b ?? 1);
-  const c = Number(coefficients.c ?? 0);
-  const d = Number(coefficients.d ?? 0);
+  const b = formatValue(coefficients.b ?? 0);
 
-  if (preset?.waveType === 'multi') {
-    return `y = ${a}sin(${b}x)${signedTerm(c, `sin(${formatValue(d)}x)`)}`;
+  if (preset?.waveType === 'sin-phase') {
+    return `y = sin(${a}x ${b >= 0 ? '+' : '-'} ${formatValue(Math.abs(b))})`;
   }
 
-  if (preset?.waveType === 'damped') {
-    return `y = ${a}sin(${b}x)exp(-${formatValue(c)}x)${signedTerm(d, '')}`;
+  if (preset?.waveType === 'sin-cos-mix') {
+    return `y = ${a}sin(x) ${b >= 0 ? '+' : '-'} ${formatValue(Math.abs(b))}cos(x)`;
   }
 
-  if (preset?.waveType === 'tangent') {
-    return `y = ${a}tan(${b}x)${signedTerm(c, '')}`;
+  if (preset?.waveType === 'cos-basic') {
+    return `y = ${a}cos(x) ${b >= 0 ? '+' : '-'} ${formatValue(Math.abs(b))}`;
   }
 
-  return `y = ${a}sin(${b}x)${signedTerm(c, '')}`;
+  return `y = ${a}sin(x) ${b >= 0 ? '+' : '-'} ${formatValue(Math.abs(b))}`;
 }

@@ -1,10 +1,11 @@
 import { useContext } from "react";
 import { GameContext } from "../../Context/GameContext.jsx";
 import { getStage3Equation } from "../../Game/Equations/Stage3Equation.js";
+import { BUILD_CHALLENGE_BY_STAGE } from "../../Game/Equations/BuildChallengeData.js";
 import "../../Assets/Styles/Stages.css";
 
-export default function Stage3({ setScreen, onEditPreset, onAddEquation, onContinue }) {
-  const { presets, setActivePreset } = useContext(GameContext);
+export default function Stage3({ setScreen, onEditPreset, onAddEquation, onContinue, onBuildChallenge }) {
+  const { presets, setActivePreset, formulaUnlocks = {} } = useContext(GameContext);
 
   const getPresetSummary = (preset) => {
     return {
@@ -13,6 +14,23 @@ export default function Stage3({ setScreen, onEditPreset, onAddEquation, onConti
       title: preset.title,
       description: preset.description
     };
+  };
+
+  const stageSteps = BUILD_CHALLENGE_BY_STAGE[3] || [];
+  const visiblePresets = presets.filter((preset) =>
+    formulaUnlocks[preset.id] || !stageSteps.some((step) => step.unlockedPresetId === preset.id)
+  );
+  const allStageFormulasUnlocked = stageSteps.every((step) => formulaUnlocks[step.unlockedPresetId]);
+  const nextBuildStep = stageSteps.find((step) => !formulaUnlocks[step.unlockedPresetId]);
+
+  const openPreset = (preset) => {
+    if (!formulaUnlocks[preset.id]) {
+      onBuildChallenge?.("stage3", preset.id);
+      return;
+    }
+
+    setActivePreset(preset);
+    onEditPreset?.(preset);
   };
 
   return (
@@ -35,7 +53,7 @@ export default function Stage3({ setScreen, onEditPreset, onAddEquation, onConti
         </div>
 
         <div className="preset-grid">
-          {presets.map((preset, index) => {
+          {visiblePresets.map((preset, index) => {
             const summary = getPresetSummary(preset);
 
             return (
@@ -47,14 +65,7 @@ export default function Stage3({ setScreen, onEditPreset, onAddEquation, onConti
                   <h3>{summary.title}</h3>
                   <p>{summary.description}</p>
 
-                  <button
-                    type="button"
-                    className="select-button"
-                    onClick={() => {
-                      setActivePreset(preset);
-                      onEditPreset(preset);
-                    }}
-                  >
+                  <button type="button" className="select-button" onClick={() => openPreset(preset)}>
                     Edit Preset
                   </button>
                 </div>
@@ -64,9 +75,16 @@ export default function Stage3({ setScreen, onEditPreset, onAddEquation, onConti
         </div>
 
         <div className="stage-actions">
-          <button type="button" className="add-equation-btn" onClick={onAddEquation}>
-            + Add Equation
-          </button>
+          {allStageFormulasUnlocked && (
+            <button type="button" className="add-equation-btn" onClick={onAddEquation}>
+              + Add Equation
+            </button>
+          )}
+          {nextBuildStep && (
+            <button type="button" className="continue-btn" onClick={() => onBuildChallenge?.("stage3", nextBuildStep.unlockedPresetId)}>
+              Build Formula
+            </button>
+          )}
           <button type="button" className="continue-btn" onClick={onContinue}>
             Continue
           </button>

@@ -1,44 +1,21 @@
 import { useContext } from "react";
 import { GameContext } from "../../Context/GameContext.jsx";
 import { getTrigonometricEquation } from "../../Game/Equations/EquationText.js";
+import { BUILD_CHALLENGE_BY_STAGE } from "../../Game/Equations/BuildChallengeData.js";
 import "../../Assets/Styles/Stages.css";
 
-export default function Stage2({ setScreen, onEditPreset, onAddEquation, onContinue }) {
-  const { presets, setActivePreset } = useContext(GameContext);
+export default function Stage2({ setScreen, onEditPreset, onAddEquation, onContinue, onBuildChallenge }) {
+  const { presets, setActivePreset, formulaUnlocks = {} } = useContext(GameContext);
 
   const getPresetSummary = (preset) => {
     const coefficients = preset.coefficients || { a: 1, b: 0, c: 0, d: 0 };
     const a = Number(coefficients.a ?? 1);
     const b = Number(coefficients.b ?? 1);
     if (preset.type === "trigonometric") {
-      if (preset.waveType === "classic") {
-        return {
-          equation: getTrigonometricEquation(preset),
-          title: "CLASSIC WAVE",
-          description: "Smooth repeating motion with a fixed ceiling and floor."
-        };
-      }
-
-      if (preset.waveType === "multi") {
-        return {
-          equation: getTrigonometricEquation(preset),
-          title: "MULTI-FREQUENCY",
-          description: "A larger wave with smaller ripples mixed together."
-        };
-      }
-
-      if (preset.waveType === "damped") {
-        return {
-          equation: getTrigonometricEquation(preset),
-          title: "DAMPED WAVE",
-          description: "A wave that fades back to rest after intense motion."
-        };
-      }
-
       return {
         equation: getTrigonometricEquation(preset),
-        title: "TELEPORTING RAMP",
-        description: "A sharp climbing curve with instant discontinuities."
+        title: preset.title || "TRIG FORMULA",
+        description: preset.description || "A smooth repeating curve."
       };
     }
 
@@ -55,6 +32,23 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
       title: "LINEAR EQUATION",
       description: "A straight-line graph with adjustable slope and intercept."
     };
+  };
+
+  const stageSteps = BUILD_CHALLENGE_BY_STAGE[2] || [];
+  const visiblePresets = presets.filter((preset) =>
+    formulaUnlocks[preset.id] || !stageSteps.some((step) => step.unlockedPresetId === preset.id)
+  );
+  const allStageFormulasUnlocked = stageSteps.every((step) => formulaUnlocks[step.unlockedPresetId]);
+  const nextBuildStep = stageSteps.find((step) => !formulaUnlocks[step.unlockedPresetId]);
+
+  const openPreset = (preset) => {
+    if (!formulaUnlocks[preset.id]) {
+      onBuildChallenge?.("stage2", preset.id);
+      return;
+    }
+
+    setActivePreset(preset);
+    onEditPreset?.(preset);
   };
 
   return (
@@ -77,7 +71,7 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
         </div>
 
         <div className="preset-grid">
-          {presets.map((preset, index) => {
+          {visiblePresets.map((preset, index) => {
             const summary = getPresetSummary(preset);
 
             return (
@@ -89,14 +83,7 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
                   <h3>{summary.title}</h3>
                   <p>{summary.description}</p>
 
-                  <button
-                    type="button"
-                    className="select-button"
-                    onClick={() => {
-                      setActivePreset(preset);
-                      onEditPreset(preset);
-                    }}
-                  >
+                  <button type="button" className="select-button" onClick={() => openPreset(preset)}>
                     Edit Preset
                   </button>
                 </div>
@@ -106,9 +93,16 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
         </div>
 
         <div className="stage-actions">
-          <button type="button" className="add-equation-btn" onClick={onAddEquation}>
-            + Add Equation
-          </button>
+          {allStageFormulasUnlocked && (
+            <button type="button" className="add-equation-btn" onClick={onAddEquation}>
+              + Add Equation
+            </button>
+          )}
+          {nextBuildStep && (
+            <button type="button" className="continue-btn" onClick={() => onBuildChallenge?.("stage2", nextBuildStep.unlockedPresetId)}>
+              Build Formula
+            </button>
+          )}
           <button type="button" className="continue-btn" onClick={onContinue}>
             Continue
           </button>

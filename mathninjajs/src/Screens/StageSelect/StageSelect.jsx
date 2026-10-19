@@ -122,9 +122,7 @@ export default function StageSelect({ screen, setScreen, onBack, showOnboarding,
             <button
               className={`stage-card endless-card ${endlessUnlocked ? "unlocked" : "locked"}`}
               disabled={!endlessUnlocked}
-              onClick={() =>
-                alert("Endless Mode is coming soon!")
-              }
+              onClick={() => setScreen("endless")}
             >
               <div className="endless-icon">
                 ∞

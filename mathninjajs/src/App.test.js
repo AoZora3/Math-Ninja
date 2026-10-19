@@ -4,19 +4,69 @@ import PresetCard from './Components/PresetCards.jsx';
 import Gameplay from './Screens/Gameplay/Gameplay.jsx';
 import { GameContext } from './Context/GameContext.jsx';
 import Timer from './Components/Timer.jsx';
+import * as Collision from './Game/Collision.js';
 import { stage2Presets } from './Game/Equations/StagePreset2.js';
 import { getTrigonometricEquation } from './Game/Equations/EquationText.js';
 import { stage3Presets } from './Game/Equations/StagePreset3.js';
 import { getStage3Equation } from './Game/Equations/Stage3Equation.js';
+import { BUILD_CHALLENGE_STEPS, BUILD_CHALLENGE_BY_STAGE } from './Game/Equations/BuildChallengeData.js';
 import { calculateStars } from './Screens/StageResult/StageResult.jsx';
 
 beforeEach(() => {
   window.localStorage.removeItem('mathNinjaUnlockedStep');
+  window.localStorage.removeItem('mathNinjaUnlockedFormulas');
+});
+
+test('all three stages expose the full 12-formula build chain with the first formula unlocked by default', () => {
+  const expected = [
+    'y = ax + b',
+    'y = ax² + b',
+    'y = ax² + bx',
+    'y = ax³ + b',
+    'y = a·sin(x) + b',
+    'y = sin(ax + b)',
+    'y = a·cos(x) + b',
+    'y = a·sin(x) + b·cos(x)',
+    'y = a·e^x + b',
+    'y = a·e^(bx)',
+    'y = a·ln(x) + b',
+    'y = ln(ax + b)'
+  ];
+
+  const allPresets = [...stage1Presets, ...stage2Presets, ...stage3Presets];
+  expect(allPresets).toHaveLength(12);
+  expect(allPresets.map((preset) => preset.label)).toEqual(expected);
+  expect(stage1Presets[0].id).toBe('linear1');
+  expect(stage1Presets[0].coefficients).toEqual({ a: 2, b: 1 });
+});
+
+test('build challenge data contains nine locked steps with a correct tile and a one-line takeaway for each', () => {
+  expect(BUILD_CHALLENGE_STEPS).toHaveLength(9);
+  expect(BUILD_CHALLENGE_BY_STAGE[1]).toHaveLength(3);
+  expect(BUILD_CHALLENGE_BY_STAGE[2]).toHaveLength(3);
+  expect(BUILD_CHALLENGE_BY_STAGE[3]).toHaveLength(3);
+
+  BUILD_CHALLENGE_STEPS.forEach((step) => {
+    expect(step).toHaveProperty('prompt');
+    expect(step).toHaveProperty('template');
+    expect(step).toHaveProperty('takeaway');
+    expect(step).toHaveProperty('unlockedPresetId');
+    expect(step.options).toHaveLength(4);
+    expect(step.options.filter((option) => option.isCorrect)).toHaveLength(1);
+    expect(step.options.every((option) => typeof option.fn === 'function')).toBe(true);
+    expect(step.options.filter((option) => option.isCorrect).every((option) => option.takeaway === step.takeaway)).toBe(true);
+    expect(step.options.filter((option) => !option.isCorrect).every((option) => typeof option.explanation === 'string' && option.explanation.length > 0)).toBe(true);
+  });
 });
 
 // Stage 3 tests simulate a save made after clearing Stages 1 and 2.
 function unlockStage3ForTest() {
   window.localStorage.setItem('mathNinjaUnlockedStep', '3');
+}
+
+function unlockEndlessForTest(unlockedFormulas) {
+  window.localStorage.setItem('mathNinjaUnlockedStep', '4');
+  window.localStorage.setItem('mathNinjaUnlockedFormulas', JSON.stringify(unlockedFormulas));
 }
 
 test('renders the title screen', () => {
@@ -133,6 +183,68 @@ test('only Stage 1 is unlocked for a new local save', () => {
   expect(screen.getByRole('button', { name: /endless mode/i })).toBeDisabled();
 });
 
+test('Endless lists only unlocked formulas, supports all equation types, and starts endless gameplay', () => {
+  unlockEndlessForTest({
+    'quad-shift': true,
+    'sin-basic': true
+  });
+  const { container } = render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /start/i }));
+  fireEvent.click(screen.getByRole('button', { name: /endless mode/i }));
+
+  expect(screen.getByRole('heading', { name: /endless formulas/i })).toBeInTheDocument();
+  expect(container.querySelectorAll('.endless-presets-block li')).toHaveLength(4);
+  expect(screen.getByText('y = ax + b')).toBeInTheDocument();
+  expect(screen.getByText('y = ax² + b')).toBeInTheDocument();
+  expect(screen.getByText('y = a·sin(x) + b')).toBeInTheDocument();
+  expect(screen.getByText('y = a·e^x + b')).toBeInTheDocument();
+  expect(screen.queryByText('y = ax² + bx')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /edit preset/i })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: /add equation/i }));
+  ['Linear', 'Quadratic', 'Cubic', 'Trigonometric', 'Exponential', 'Logarithmic'].forEach((type) => {
+    expect(screen.getByRole('button', { name: type })).toBeInTheDocument();
+  });
+  fireEvent.click(screen.getByRole('button', { name: '←' }));
+
+  fireEvent.click(screen.getByRole('button', { name: /start endless/i }));
+  expect(screen.getByText('ENDLESS SCORE')).toBeInTheDocument();
+  expect(screen.getByLabelText('Time remaining 03:00')).toBeInTheDocument();
+  expect(container.querySelectorAll('.hotbar-button')).toHaveLength(4);
+});
+
+test('Endless fruit adds time and bombs remove time', () => {
+  jest.useFakeTimers();
+  const playSound = jest.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
+  unlockEndlessForTest({});
+  const { container, unmount } = render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /start/i }));
+  fireEvent.click(screen.getByRole('button', { name: /endless mode/i }));
+  fireEvent.click(screen.getByRole('button', { name: /start endless/i }));
+
+  const random = jest.spyOn(Math, 'random').mockReturnValue(0.9);
+  const checkSlice = jest.spyOn(Collision, 'checkEquationSlice').mockReturnValue(true);
+  act(() => jest.advanceTimersByTime(1500));
+  expect(screen.getByLabelText('Time remaining 02:59')).toBeInTheDocument();
+  expect(container.querySelector('.spawned-target')).toHaveAttribute('aria-label', 'Fruit');
+  fireEvent.click(screen.getByRole('button', { name: /fire equation/i }));
+  expect(screen.getByLabelText('Time remaining 03:04')).toBeInTheDocument();
+
+  random.mockReturnValue(0.1);
+  act(() => jest.advanceTimersByTime(1500));
+  expect(container.querySelector('.spawned-target')).toHaveAttribute('aria-label', 'Bomb');
+  fireEvent.click(screen.getByRole('button', { name: /fire equation/i }));
+  expect(screen.getByLabelText('Time remaining 02:57')).toBeInTheDocument();
+
+  unmount();
+  random.mockRestore();
+  checkSlice.mockRestore();
+  playSound.mockRestore();
+  jest.useRealTimers();
+});
+
 // Three deliberate Settings-title clicks persist the all-stages unlock.
 test('three Settings title clicks unlock all stages and reset relocks them', () => {
   render(<App />);
@@ -150,10 +262,24 @@ test('three Settings title clicks unlock all stages and reset relocks them', () 
   expect(window.localStorage.getItem('mathNinjaUnlockedStep')).toBe('1');
 });
 
-// Reset only changes the progression key; current audio settings remain intact.
-test('reset progress relocks stages but leaves other settings alone', () => {
+// Reset removes stage/formula progress while preserving audio settings.
+test('reset progress relocks stages and formulas but leaves other settings alone', () => {
   window.localStorage.setItem('mathNinjaUnlockedStep', '4');
-  render(<App />);
+  window.localStorage.setItem('mathNinjaUnlockedFormulas', JSON.stringify({
+    linear1: true,
+    'quad-shift': true,
+    'quad-mix': true,
+    cubic1: true,
+    'sin-basic': true,
+    'sin-phase': true,
+    'cos-basic': true,
+    'sin-cos-mix': true,
+    'exp-shift': true,
+    'exp-rate': true,
+    'log-linear': true,
+    'log-shift': true
+  }));
+  const { container } = render(<App />);
 
   fireEvent.click(screen.getByRole('button', { name: /start/i }));
   expect(screen.getByRole('button', { name: /endless mode/i })).toBeEnabled();
@@ -168,8 +294,18 @@ test('reset progress relocks stages but leaves other settings alone', () => {
   fireEvent.click(screen.getByRole('button', { name: /start/i }));
 
   expect(window.localStorage.getItem('mathNinjaUnlockedStep')).toBe('1');
+  expect(JSON.parse(window.localStorage.getItem('mathNinjaUnlockedFormulas'))).toEqual({
+    linear1: true,
+    'sin-basic': true,
+    'exp-shift': true
+  });
   expect(screen.getByRole('button', { name: /trig waves/i })).toBeDisabled();
   expect(screen.getByRole('button', { name: /endless mode/i })).toBeDisabled();
+
+  fireEvent.click(screen.getByRole('button', { name: /graph basics/i }));
+  fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+  expect(container.querySelectorAll('.hotbar-button')).toHaveLength(1);
+  expect(screen.queryByRole('button', { name: /quadratic y = 1x² \+ 0/i })).not.toBeInTheDocument();
 });
 
 // A successful gameplay result is the event that advances stage progression.
@@ -246,52 +382,82 @@ test('Stage 3 exponential presets match and invert the four suggested formulas',
   });
 });
 
-// Stage 1 should offer one built-in preset for each requested polynomial form.
-test('stage 1 shows linear, quadratic, and cubic formulas and can add a cubic', () => {
+// Locked formulas stay hidden; each explicit build action unlocks only one formula.
+test('stage 1 reveals formulas one build challenge at a time', () => {
   render(<App />);
 
   fireEvent.click(screen.getByRole('button', { name: /start/i }));
   fireEvent.click(screen.getByRole('button', { name: /graph basics/i }));
 
   expect(screen.getByText('y = 2x + 1')).toBeInTheDocument();
-  expect(screen.getByText('y = 1x² + 0')).toBeInTheDocument();
-  expect(screen.getByText('y = 1x³ + 0')).toBeInTheDocument();
+  expect(screen.queryByText('y = 1x² + 0')).not.toBeInTheDocument();
+  expect(screen.queryByText('y = 1x³ + 0')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /add equation/i })).not.toBeInTheDocument();
 
+  fireEvent.click(screen.getByRole('button', { name: /build formula/i }));
+  expect(screen.getByText('What if we square x?')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '|x|' }));
+  expect(screen.getByText('Absolute value also makes both sides rise, but it draws a V with a sharp point. A parabola is round at the bottom.')).toBeInTheDocument();
+  expect(document.querySelectorAll('svg path').length).toBeGreaterThanOrEqual(2);
+
+  fireEvent.click(screen.getByRole('button', { name: 'x^2' }));
+  expect(screen.getByText('Squaring makes negative and positive x give the same result, so both sides rise together into a smooth U-shape (a parabola).')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /continue/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: /build formula/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+  expect(screen.getByRole('heading', { name: /graph basics/i })).toBeInTheDocument();
+  expect(screen.getByText('y = 1x² + 0')).toBeInTheDocument();
+  expect(screen.queryByText('y = 1x³ + 0')).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: /build formula/i }));
+  expect(screen.getByText('What if we add a plain x term?')).toBeInTheDocument();
+});
+
+test('stage 1 allows adding equations after all built-in formulas are unlocked', () => {
+  window.localStorage.setItem('mathNinjaUnlockedFormulas', JSON.stringify({
+    linear1: true,
+    'quad-shift': true,
+    'quad-mix': true,
+    cubic1: true
+  }));
+  render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /start/i }));
+  fireEvent.click(screen.getByRole('button', { name: /graph basics/i }));
+
+  expect(screen.getByRole('button', { name: /add equation/i })).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: /add equation/i }));
   expect(screen.getByRole('button', { name: /^cubic$/i })).toBeInTheDocument();
 });
 
-// The gameplay switch follows the requested polynomial order and wraps around.
-test('gameplay switches linear to quadratic to cubic and back to linear', () => {
-  render(<App />);
+// Locked formulas stay out of gameplay controls, but the stage remains playable.
+test('gameplay only offers unlocked formulas and still allows a stage attempt', () => {
+  const { container } = render(<App />);
 
   fireEvent.click(screen.getByRole('button', { name: /start/i }));
   fireEvent.click(screen.getByRole('button', { name: /graph basics/i }));
   fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
-  expect(screen.getByRole('button', { name: /switch to quadratic/i })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: /switch to quadratic/i }));
-
-  expect(screen.getByRole('button', { name: /switch to cubic/i })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: /switch to cubic/i }));
-
-  expect(screen.getByRole('button', { name: /switch to linear/i })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: /switch to linear/i }));
-
-  expect(screen.getByRole('button', { name: /switch to quadratic/i })).toBeInTheDocument();
+  expect(container.querySelectorAll('.hotbar-button')).toHaveLength(1);
+  expect(screen.getByRole('button', { name: /linear y = 2x \+ 1/i })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /quadratic y = 1x² \+ 0/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /cubic y = 1x³ \+ 0/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /switch to quadratic/i })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /fire equation/i })).toBeEnabled();
 });
 
-test('stage 3 shows all four exponential/inverse-log presets and starts gameplay', () => {
+test('stage 3 initially shows only its first preset and starts gameplay', () => {
   unlockStage3ForTest();
   render(<App />);
 
   fireEvent.click(screen.getByRole('button', { name: /start/i }));
   fireEvent.click(screen.getByRole('button', { name: /exponentials \+ inverse logs/i }));
   expect(screen.getByRole('heading', { name: /exponentials \+ inverse logs/i })).toBeInTheDocument();
-  expect(screen.getByText(/stretch \+ vertical shift/i)).toBeInTheDocument();
-  expect(screen.getByText(/growth rate \+ shift/i)).toBeInTheDocument();
-  expect(screen.getByText(/start value \+ rate/i)).toBeInTheDocument();
-  expect(screen.getByText(/output scale \+ shift/i)).toBeInTheDocument();
+  expect(screen.getByText(/move it up or down with b/i)).toBeInTheDocument();
+  expect(screen.queryByText(/growth rate \+ shift/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/start value \+ rate/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/output scale \+ shift/i)).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
