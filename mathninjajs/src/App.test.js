@@ -68,8 +68,12 @@ test('build challenge formula updates a and b, replaces the placeholder, and kee
   const onComplete = jest.fn();
   const { container } = render(<BuildChallenge step={step} onComplete={onComplete} />);
   const targetCurveBefore = container.querySelector('svg path')?.getAttribute('d');
+  expect(container.querySelectorAll('.challenge-grid line')).toHaveLength(22);
+  expect(container.querySelectorAll('.challenge-axes line')).toHaveLength(2);
 
   fireEvent.click(screen.getByRole('button', { name: '+ b*x' }));
+  expect(container.querySelectorAll('.challenge-graph')).toHaveLength(2);
+  expect(container.querySelectorAll('.challenge-grid line')).toHaveLength(44);
   expect(container.querySelector('.challenge-choice-value')).toHaveTextContent('+ 0*x');
   expect(container.querySelector('.challenge-equation .challenge-coefficient-a')).toHaveTextContent('0');
   expect(container.querySelector('.challenge-equation .challenge-coefficient-b')).toHaveTextContent('0');

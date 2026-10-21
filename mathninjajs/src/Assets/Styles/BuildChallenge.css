@@ -36,3 +36,20 @@
   font-size: 13px;
   font-weight: 900;
 }
+
+.challenge-graph {
+  display: block;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #111827;
+}
+
+.challenge-grid line {
+  stroke: #2c3a4d;
+  stroke-width: 1;
+}
+
+.challenge-axes line {
+  stroke: #dfe7f3;
+  stroke-width: 2;
+}

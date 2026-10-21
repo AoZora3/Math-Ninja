@@ -159,8 +159,20 @@ export default function BuildChallenge({ step, onBack, onComplete, onContinue })
             ].map((graph) => (
               <div key={graph.label} style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ marginBottom: 6, fontSize: 12, opacity: 0.8 }}>{graph.label}</div>
-                <svg viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`} width="100%" height={220} style={{ background: '#111827', borderRadius: 12 }}>
-                  <g stroke="rgba(255,255,255,0.2)" strokeWidth="1">
+                <svg viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`} width="100%" height={220} className="challenge-graph">
+                  <g className="challenge-grid">
+                    {Array.from({ length: 11 }).map((_, index) => {
+                      const x = PADDING + (index / 10) * (GRAPH_WIDTH - PADDING * 2);
+                      const y = PADDING + (index / 10) * (GRAPH_HEIGHT - PADDING * 2);
+                      return (
+                        <g key={`grid-${index}`}>
+                          <line x1={x} y1={PADDING} x2={x} y2={GRAPH_HEIGHT - PADDING} />
+                          <line x1={PADDING} y1={y} x2={GRAPH_WIDTH - PADDING} y2={y} />
+                        </g>
+                      );
+                    })}
+                  </g>
+                  <g className="challenge-axes">
                     <line x1={PADDING} y1={GRAPH_HEIGHT / 2} x2={GRAPH_WIDTH - PADDING} y2={GRAPH_HEIGHT / 2} />
                     <line x1={GRAPH_WIDTH / 2} y1={PADDING} x2={GRAPH_WIDTH / 2} y2={GRAPH_HEIGHT - PADDING} />
                   </g>
