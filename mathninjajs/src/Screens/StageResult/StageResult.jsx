@@ -7,7 +7,17 @@ export function calculateStars({ won, lives, hitRate, elapsedSeconds }) {
 	return Number(lives > 1) + Number(hitRate >= 80) + Number(elapsedSeconds <= 120);
 }
 
-export default function StageResult({ won, score, lives, hitRate, elapsedSeconds, isEndless = false, onRetry, onBack }) {
+export default function StageResult({
+	won,
+	score,
+	lives,
+	hitRate,
+	elapsedSeconds,
+	isEndless = false,
+	highScore = 0,
+	onRetry,
+	onBack
+}) {
 	const stars = calculateStars({ won, lives, hitRate, elapsedSeconds });
 	const resultMessage = isEndless
 		? 'The timer ran out. Your endless run is over.'
@@ -31,6 +41,7 @@ export default function StageResult({ won, score, lives, hitRate, elapsedSeconds
 					<span>POINTS</span>
 					<strong>{score}</strong>
 				</div>
+				{isEndless && <p className="result-star-summary">Highest endless score: {highScore}</p>}
 
 				<dl className="result-stats">
 					<div>
@@ -48,7 +59,7 @@ export default function StageResult({ won, score, lives, hitRate, elapsedSeconds
 				</dl>
 
 				<div className="result-actions">
-					<button type="button" className="result-button secondary" onClick={onBack}>{isEndless ? 'Back to Endless' : 'Back to stage'}</button>
+					<button type="button" className="result-button secondary" onClick={onBack}>{isEndless ? 'Back to Endless' : 'Select stages'}</button>
 					<button type="button" className="result-button primary" onClick={onRetry}>Play again</button>
 				</div>
 			</section>

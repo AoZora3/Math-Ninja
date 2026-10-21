@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import '../../Assets/Styles/BuildChallenge.css';
 
 const GRAPH_WIDTH = 320;
 const GRAPH_HEIGHT = 220;
@@ -30,6 +31,10 @@ function buildLine(points) {
   return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
 }
 
+function formatCoefficient(value) {
+  return Number(value).toFixed(1).replace(/\.0$/, '');
+}
+
 function shuffleOptions(options) {
   const shuffled = [...options];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -41,17 +46,67 @@ function shuffleOptions(options) {
 
 export default function BuildChallenge({ step, onBack, onComplete, onContinue }) {
   const [options] = useState(() => shuffleOptions(step?.options || []));
-  const [aValue, setAValue] = useState(step?.initialCoefficients?.a ?? 1);
-  const [bValue, setBValue] = useState(step?.initialCoefficients?.b ?? 0);
+  const [aValue, setAValue] = useState(0);
+  const [bValue, setBValue] = useState(0);
   const [selectedOptionId, setSelectedOptionId] = useState(null);
   const [isSolved, setIsSolved] = useState(false);
 
-  const targetPoints = useMemo(() => sampleCurve(step?.targetFn || (() => 0), aValue, bValue), [aValue, bValue, step]);
+  const targetCoefficients = step?.initialCoefficients || { a: 1, b: 0 };
+  const targetPoints = useMemo(
+    () => sampleCurve(step?.targetFn || (() => 0), targetCoefficients.a, targetCoefficients.b),
+    [step, targetCoefficients.a, targetCoefficients.b]
+  );
   const selectedOption = options.find((option) => option.id === selectedOptionId);
   const previewPoints = useMemo(
     () => (selectedOption ? sampleCurve(selectedOption.fn, aValue, bValue) : []),
     [selectedOption, aValue, bValue]
   );
+
+  const matchesTarget = Boolean(
+    selectedOption?.isCorrect &&
+    Math.abs(aValue - targetCoefficients.a) < 0.05 &&
+    Math.abs(bValue - targetCoefficients.b) < 0.05
+  );
+
+  const renderCoefficientText = (text, keyPrefix) => text
+    .split(/(\ba\b|\bb\b)/g)
+    .map((part, index) => {
+      if (part === 'a') {
+        return <span className="challenge-coefficient-a" key={`${keyPrefix}-a-${index}`}>{formatCoefficient(aValue)}</span>;
+      }
+      if (part === 'b') {
+        return <span className="challenge-coefficient-b" key={`${keyPrefix}-b-${index}`}>{formatCoefficient(bValue)}</span>;
+      }
+      return <React.Fragment key={`${keyPrefix}-text-${index}`}>{part}</React.Fragment>;
+    });
+
+  const renderChallengeEquation = () => step.template
+    .split(/(\[\s*\?\s*\]|\ba\b|\bb\b)/g)
+    .map((part, index) => {
+      if (/^\[\s*\?\s*\]$/.test(part)) {
+        return (
+          <React.Fragment key={`choice-${index}`}>
+            [
+            <span className="challenge-choice-value">
+              {selectedOption
+                ? renderCoefficientText(selectedOption.label, `choice-${index}`)
+                : '?'}
+            </span>
+            ]
+          </React.Fragment>
+        );
+      }
+      if (part === 'a' || part === 'b') {
+        return renderCoefficientText(part, `equation-${index}`);
+      }
+      return <React.Fragment key={`equation-text-${index}`}>{part}</React.Fragment>;
+    });
+
+  useEffect(() => {
+    if (!matchesTarget || isSolved || !step) return;
+    setIsSolved(true);
+    onComplete(step.unlockedPresetId);
+  }, [isSolved, matchesTarget, onComplete, step]);
 
   const handleOptionClick = (option) => {
     if (isSolved) {
@@ -59,10 +114,6 @@ export default function BuildChallenge({ step, onBack, onComplete, onContinue })
     }
 
     setSelectedOptionId(option.id);
-    setIsSolved(option.isCorrect);
-    if (option.isCorrect) {
-      onComplete(step.unlockedPresetId);
-    }
   };
 
   if (!step) {
@@ -86,18 +137,18 @@ export default function BuildChallenge({ step, onBack, onComplete, onContinue })
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, background: '#1b1730', borderRadius: 18, padding: 16, border: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <strong style={{ fontSize: 16 }}>{step.template}</strong>
-            <span style={{ fontSize: 12, opacity: 0.8 }}>Select the expression that satisfies the question.</span>
+            <strong className="challenge-equation">{renderChallengeEquation()}</strong>
+            <span style={{ fontSize: 12, opacity: 0.8 }}>Select an expression, then tune a and b to match the fixed target.</span>
           </div>
 
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={{ fontSize: 12, opacity: 0.8 }}>a</span>
-              <input type="range" min={-3} max={3} step={0.1} value={aValue} onChange={(event) => setAValue(Number(event.target.value))} />
+              <span className="challenge-slider-value challenge-coefficient-a">a = {formatCoefficient(aValue)}</span>
+              <input aria-label="a" type="range" min={-3} max={3} step={0.1} value={aValue} onChange={(event) => setAValue(Number(event.target.value))} />
             </label>
             <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={{ fontSize: 12, opacity: 0.8 }}>b</span>
-              <input type="range" min={-3} max={3} step={0.1} value={bValue} onChange={(event) => setBValue(Number(event.target.value))} />
+              <span className="challenge-slider-value challenge-coefficient-b">b = {formatCoefficient(bValue)}</span>
+              <input aria-label="b" type="range" min={-3} max={3} step={0.1} value={bValue} onChange={(event) => setBValue(Number(event.target.value))} />
             </label>
           </div>
 
@@ -132,14 +183,14 @@ export default function BuildChallenge({ step, onBack, onComplete, onContinue })
                 padding: '14px 16px',
                 borderRadius: 12,
                 border: selectedOptionId === option.id ? '2px solid #fff' : '1px solid rgba(255,255,255,0.18)',
-                background: selectedOptionId === option.id && option.isCorrect ? '#103426' : '#211d37',
+                background: selectedOptionId === option.id && isSolved ? '#103426' : '#211d37',
                 color: '#fff',
                 cursor: isSolved ? 'default' : 'pointer'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <strong>{option.label}</strong>
-                {selectedOptionId === option.id && option.isCorrect && <span>✓</span>}
+                {selectedOptionId === option.id && isSolved && <span>✓</span>}
               </div>
             </button>
           ))}
@@ -147,8 +198,16 @@ export default function BuildChallenge({ step, onBack, onComplete, onContinue })
 
         {selectedOption && (
           <div style={{ padding: 12, borderRadius: 12, background: '#1f2937', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>{selectedOption.isCorrect ? 'Takeaway' : 'Not quite.'}</div>
-            <div style={{ opacity: 0.9 }}>{selectedOption.isCorrect ? selectedOption.takeaway : selectedOption.explanation}</div>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>
+              {isSolved ? 'Takeaway' : selectedOption.isCorrect ? 'Match the target' : 'Not quite.'}
+            </div>
+            <div style={{ opacity: 0.9 }}>
+              {isSolved
+                ? selectedOption.takeaway
+                : selectedOption.isCorrect
+                  ? `Adjust a to ${targetCoefficients.a} and b to ${targetCoefficients.b} to match the fixed target curve.`
+                  : selectedOption.explanation}
+            </div>
           </div>
         )}
 

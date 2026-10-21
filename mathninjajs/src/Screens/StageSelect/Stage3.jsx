@@ -22,6 +22,7 @@ export default function Stage3({ setScreen, onEditPreset, onAddEquation, onConti
   );
   const allStageFormulasUnlocked = stageSteps.every((step) => formulaUnlocks[step.unlockedPresetId]);
   const nextBuildStep = stageSteps.find((step) => !formulaUnlocks[step.unlockedPresetId]);
+  const hasFourFormulaPresets = visiblePresets.length >= 4;
 
   const openPreset = (preset) => {
     if (!formulaUnlocks[preset.id]) {
@@ -50,6 +51,10 @@ export default function Stage3({ setScreen, onEditPreset, onAddEquation, onConti
           <span>STAGE 3</span>
           <h1>EXPONENTIALS + INVERSE LOGS</h1>
           <p>Compare each exponential curve with its inverse logarithm.</p>
+          <p className="formula-progress">
+            Formula presets: {visiblePresets.length}/4
+            {!hasFourFormulaPresets && " — unlock four formulas to continue."}
+          </p>
         </div>
 
         <div className="preset-grid">
@@ -85,7 +90,7 @@ export default function Stage3({ setScreen, onEditPreset, onAddEquation, onConti
               Build Formula
             </button>
           )}
-          <button type="button" className="continue-btn" onClick={onContinue}>
+          <button type="button" className="continue-btn" onClick={() => onContinue()} disabled={!hasFourFormulaPresets}>
             Continue
           </button>
         </div>

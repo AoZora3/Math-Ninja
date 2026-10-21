@@ -21,10 +21,21 @@
   cursor: pointer;
 }
 
+.stage-actions button:disabled {
+  background: #64748b;
+  color: #dbe3ec;
+  cursor: not-allowed;
+}
+
 .add-equation-btn { background: #f59e0b; color: #111827; }
 .continue-btn { background: #22c55e; color: #052e16; }
 
 .preset-container { padding-bottom: 90px; }
+.formula-progress {
+  margin-top: 12px;
+  color: #ffcc33;
+  font-weight: 700;
+}
 
 .endless-presets-block {
   max-width: 760px;
@@ -49,4 +60,13 @@
   gap: 8px 24px;
   margin: 0;
   padding-left: 20px;
+}
+
+.endless-high-score {
+  margin-top: 8px !important;
+  color: #ffcc33;
+}
+
+.endless-high-score strong {
+  font-size: 1.15em;
 }

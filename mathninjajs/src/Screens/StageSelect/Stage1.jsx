@@ -40,6 +40,7 @@ export default function Stage1({ setScreen, onEditPreset, onAddEquation, onConti
   );
   const allStageFormulasUnlocked = stageSteps.every((step) => formulaUnlocks[step.unlockedPresetId]);
   const nextBuildStep = stageSteps.find((step) => !formulaUnlocks[step.unlockedPresetId]);
+  const hasFourFormulaPresets = visiblePresets.length >= 4;
 
   const openPreset = (preset) => {
     if (!formulaUnlocks[preset.id]) {
@@ -68,6 +69,10 @@ export default function Stage1({ setScreen, onEditPreset, onAddEquation, onConti
           <span>STAGE 1</span>
           <h1>GRAPH BASICS</h1>
           <p>Choose a preset equation to study its graph.</p>
+          <p className="formula-progress">
+            Formula presets: {visiblePresets.length}/4
+            {!hasFourFormulaPresets && " — unlock four formulas to continue."}
+          </p>
         </div>
 
         <div className="preset-grid">
@@ -103,7 +108,7 @@ export default function Stage1({ setScreen, onEditPreset, onAddEquation, onConti
               Build Formula
             </button>
           )}
-          <button type="button" className="continue-btn" onClick={onContinue}>
+          <button type="button" className="continue-btn" onClick={() => onContinue()} disabled={!hasFourFormulaPresets}>
             Continue
           </button>
         </div>

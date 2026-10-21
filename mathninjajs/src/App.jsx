@@ -20,10 +20,12 @@ import { BUILD_CHALLENGE_BY_STAGE } from "./Game/Equations/BuildChallengeData.js
 import BuildChallenge from "./Screens/BuildChallenge/BuildChallenge.jsx";
 import EndlessMode from "./Screens/EndlessMode/EndlessMode.jsx";
 import { storage } from "./Utils/storage";
+import { calculateStars } from "./Screens/StageResult/StageResult.jsx";
 
 // Step 4 represents the Endless card; progress is stored locally on this device.
 const PROGRESSION_STORAGE_KEY = "mathNinjaUnlockedStep";
 const FORMULA_UNLOCK_STORAGE_KEY = "mathNinjaUnlockedFormulas";
+const STAGE_STARS_STORAGE_KEY = "mathNinjaStageStars";
 const FINAL_UNLOCKED_STEP = 4;
 const DEFAULT_FORMULA_UNLOCKS = {
   stage1: ["linear1"],
@@ -51,6 +53,23 @@ function readUnlockedFormulas() {
   try {
     const parsed = JSON.parse(rawValue);
     return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function readStageStars() {
+  const rawValue = storage.getItem(STAGE_STARS_STORAGE_KEY, '{}');
+
+  try {
+    const parsed = JSON.parse(rawValue);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      ["stage1", "stage2", "stage3"].map((stage) => {
+        const stars = Number(parsed[stage]);
+        return [stage, Number.isInteger(stars) && stars >= 0 && stars <= 3 ? stars : 0];
+      })
+    );
   } catch {
     return {};
   }
@@ -149,13 +168,16 @@ function AppContent({ formulaUnlocks, setFormulaUnlocks }) {
     setMusicVolume,
     sfxVolume,
     setSfxVolume,
-    startBackgroundMusic
+    startBackgroundMusic,
+    endlessHighScore,
+    resetEndlessHighScore
   } = useContext(GameContext);
   const [screen, setScreen] = useState("splash");
   const [editingPreset, setEditingPreset] = useState(null);
   const [currentStage, setCurrentStage] = useState("stage1");
   const [showGettingStarted, setShowGettingStarted] = useState(true);
   const [unlockedStep, setUnlockedStep] = useState(readUnlockedStep);
+  const [stageStars, setStageStars] = useState(readStageStars);
   const [buildChallengeStep, setBuildChallengeStep] = useState(null);
 
   // Persist unlock progress independently from settings and other game data.
@@ -166,6 +188,10 @@ function AppContent({ formulaUnlocks, setFormulaUnlocks }) {
   useEffect(() => {
     storage.setItem(FORMULA_UNLOCK_STORAGE_KEY, JSON.stringify(formulaUnlocks));
   }, [formulaUnlocks]);
+
+  useEffect(() => {
+    storage.setItem(STAGE_STARS_STORAGE_KEY, JSON.stringify(stageStars));
+  }, [stageStars]);
 
   const goToStage = (stageName) => {
     const requestedStep = { stage1: 1, stage2: 2, stage3: 3, endless: 4 }[stageName];
@@ -185,10 +211,14 @@ function AppContent({ formulaUnlocks, setFormulaUnlocks }) {
   };
 
   // A win only advances the furthest unlocked step, never moving progress backward.
-  const handleStageWin = () => {
+  const handleStageWin = ({ lives, hitRate, elapsedSeconds }) => {
     const completedStep = { stage1: 1, stage2: 2, stage3: 3 }[currentStage];
     if (completedStep) {
       setUnlockedStep((currentStep) => Math.max(currentStep, completedStep + 1));
+      const earnedStars = calculateStars({ won: true, lives, hitRate, elapsedSeconds });
+      setStageStars((previous) => {
+        return { ...previous, [currentStage]: Math.max(previous[currentStage] || 0, earnedStars) };
+      });
     }
   };
 
@@ -196,6 +226,8 @@ function AppContent({ formulaUnlocks, setFormulaUnlocks }) {
   const resetProgress = () => {
     setUnlockedStep(1);
     setFormulaUnlocks(getDefaultFormulaUnlocks());
+    setStageStars({ stage1: 0, stage2: 0, stage3: 0 });
+    resetEndlessHighScore();
   };
   const unlockAllStages = () => setUnlockedStep(FINAL_UNLOCKED_STEP);
 
@@ -275,6 +307,8 @@ function AppContent({ formulaUnlocks, setFormulaUnlocks }) {
         showOnboarding={showGettingStarted}
         setShowOnboarding={setShowGettingStarted}
         unlockedStep={unlockedStep}
+        stageStars={stageStars}
+        endlessHighScore={endlessHighScore}
       />
     );
   }
@@ -325,6 +359,7 @@ function AppContent({ formulaUnlocks, setFormulaUnlocks }) {
     return (
       <EndlessMode
         presets={presets}
+        highScore={endlessHighScore}
         onBack={() => setScreen("stageSelect")}
         onAddEquation={() => setScreen("selectEquationType")}
         onStart={() => handleContinue(true)}
@@ -379,7 +414,7 @@ function AppContent({ formulaUnlocks, setFormulaUnlocks }) {
     return <Gameplay
       onBack={() => {
         setCurrentScreen(currentStage);
-        setScreen(currentStage);
+        setScreen(currentStage === "endless" ? "endless" : "stageSelect");
       }}
       onWin={handleStageWin}
     />;

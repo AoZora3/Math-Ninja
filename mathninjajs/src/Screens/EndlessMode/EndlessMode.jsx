@@ -1,6 +1,8 @@
 import "../../Assets/Styles/Stages.css";
 
-export default function EndlessMode({ presets, onBack, onAddEquation, onStart }) {
+export default function EndlessMode({ presets, highScore = 0, onBack, onAddEquation, onStart }) {
+  const equationTypes = [...new Set(presets.map((preset) => preset.type))];
+
   return (
     <div className="screen">
       <header className="header">
@@ -15,20 +17,19 @@ export default function EndlessMode({ presets, onBack, onAddEquation, onStart })
         <div className="stage-heading">
           <span>UNLIMITED RUN</span>
           <h1>ENDLESS FORMULAS</h1>
-          <p>Fruit adds time. Bombs take time away.</p>
+          <p>Start with one minute. Fruit adds time; bombs take time away.</p>
+          <p className="endless-high-score">Highest score: <strong>{highScore}</strong></p>
         </div>
 
         <section className="endless-presets-block" aria-labelledby="endless-presets-title">
-          <h2 id="endless-presets-title">Unlocked presets available</h2>
-          <p>Every formula unlocked in Stages 1–3 will be available in the run.</p>
-          {presets.length > 0 ? (
+          <h2 id="endless-presets-title">Equation types in your hotbar</h2>
+          <p>Choose an equation type during the run to switch curves.</p>
+          {equationTypes.length > 0 ? (
             <ul>
-              {presets.map((preset) => (
-                <li key={preset.id}>{preset.label}</li>
-              ))}
+              {equationTypes.map((type) => <li key={type}>{type}</li>)}
             </ul>
           ) : (
-            <p>No stage formulas are unlocked yet.</p>
+            <p>No equation types are unlocked yet.</p>
           )}
         </section>
 

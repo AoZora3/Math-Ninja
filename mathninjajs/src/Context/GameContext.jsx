@@ -8,11 +8,14 @@ import clickSound from '../Assets/SoundEffects/Click.mp3';
 import presetSelectSound from '../Assets/SoundEffects/PresetSelect.mp3';
 import sliceHitSound from '../Assets/SoundEffects/SliceHit.mp3';
 import sliceMissSound from '../Assets/SoundEffects/SliceMiss.mp3';
+import { storage } from '../Utils/storage.js';
 
 
 export const GameContext = createContext(null);
 export const GAME_DURATION_SECONDS = 180;
+export const ENDLESS_DURATION_SECONDS = 60;
 export const GOAL_SCORE = 100;
+const ENDLESS_HIGH_SCORE_KEY = 'mathNinjaEndlessHighScore';
 
 const MAX_OBJECTS_PER_TYPE = 6; // Limit active fruit and bombs independently.
 const OBJECT_LIFETIME_MS = 5000; // Despawn each object after five seconds.
@@ -30,6 +33,11 @@ function playSoundEffect(sound, volume) {
   playback?.catch(() => {});
 }
 
+function readEndlessHighScore() {
+  const savedScore = Number(storage.getItem(ENDLESS_HIGH_SCORE_KEY, '0'));
+  return Number.isFinite(savedScore) && savedScore >= 0 ? savedScore : 0;
+}
+
 export function GameProvider({ children, formulaUnlocks = {}, setFormulaUnlocks = () => {} }) {
   const [presets, setPresets] = useState(stage1Presets);
   const [activePreset, setActivePreset] = useState(stage1Presets[0]);
@@ -45,6 +53,8 @@ export function GameProvider({ children, formulaUnlocks = {}, setFormulaUnlocks 
   const [equationStats, setEquationStats] = useState({ attempts: 0, hits: 0 });
   const [spawnedObjects, setSpawnedObjects] = useState([]);
   const [highScore, setHighScore] = useState(0);
+  const [endlessHighScore, setEndlessHighScore] = useState(readEndlessHighScore);
+  const endlessHighScoreRef = useRef(endlessHighScore);
   const [musicVolume, setMusicVolume] = useState(67); // default volume level for background music
   const [sfxVolume, setSfxVolume] = useState(67);     // default volume level for sound effects
   const [musicStarted, setMusicStarted] = useState(false);
@@ -120,11 +130,17 @@ export function GameProvider({ children, formulaUnlocks = {}, setFormulaUnlocks 
     setLives(3);
     setComboMultiplier(1);
     setStreak(0);
-    setTimeLeft(GAME_DURATION_SECONDS);
+    setTimeLeft(modeIsEndless ? ENDLESS_DURATION_SECONDS : GAME_DURATION_SECONDS);
     setElapsedTime(0);
     setEquationStats({ attempts: 0, hits: 0 });
     setSpawnedObjects([]);
     setCurrentScreen('gameplay');
+  }
+
+  function resetEndlessHighScore() {
+    endlessHighScoreRef.current = 0;
+    setEndlessHighScore(0);
+    storage.removeItem(ENDLESS_HIGH_SCORE_KEY);
   }
 
   async function sendScoreToBackend(finalScore) {
@@ -255,15 +271,19 @@ export function GameProvider({ children, formulaUnlocks = {}, setFormulaUnlocks 
 
     const awardedScore = scoreChange * comboMultiplier * formulaMultiplier;
     if (awardedScore > 0) {
-      setScore(prev => {
-        const nextScore = prev + awardedScore;
-        scoreRef.current = nextScore;
-        if (!isEndless && nextScore >= GOAL_SCORE) {
-          sendScoreToBackend(nextScore);
-          setCurrentScreen('stageComplete');
-        }
-        return nextScore;
-      });
+      const nextScore = scoreRef.current + awardedScore;
+      scoreRef.current = nextScore;
+      setScore(nextScore);
+      if (isEndless && nextScore > endlessHighScoreRef.current) {
+        endlessHighScoreRef.current = nextScore;
+        setEndlessHighScore(nextScore);
+        storage.setItem(ENDLESS_HIGH_SCORE_KEY, String(nextScore));
+      }
+
+      if (!isEndless && nextScore >= GOAL_SCORE) {
+        sendScoreToBackend(nextScore);
+        setCurrentScreen('stageComplete');
+      }
     }
 
     if (isEndless && fruitHits > 0) {
@@ -313,6 +333,8 @@ export function GameProvider({ children, formulaUnlocks = {}, setFormulaUnlocks 
       streak,
       spawnedObjects,
       highScore,
+      endlessHighScore,
+      resetEndlessHighScore,
       musicVolume,
       setMusicVolume,
       sfxVolume,

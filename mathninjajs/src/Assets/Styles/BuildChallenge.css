@@ -1,0 +1,38 @@
+.challenge-equation {
+  min-width: 0;
+  color: #f8fafc;
+  font-size: clamp(1.1rem, 3vw, 1.55rem);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.challenge-coefficient-a,
+.challenge-coefficient-b {
+  font-weight: 900;
+  text-shadow: 0 0 12px currentColor;
+}
+
+.challenge-equation .challenge-coefficient-a,
+.challenge-slider-value.challenge-coefficient-a {
+  color: #38bdf8;
+}
+
+.challenge-equation .challenge-coefficient-b,
+.challenge-slider-value.challenge-coefficient-b {
+  color: #f472b6;
+}
+
+.challenge-choice-value {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 5px;
+  background: rgba(250, 204, 21, 0.14);
+  color: #facc15;
+  font-weight: 900;
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+}
+
+.challenge-slider-value {
+  font-size: 13px;
+  font-weight: 900;
+}
