@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import BoardSlide from "./BoardSlider.jsx";
 import "../../../Assets/Styles/GettingStarted.css";
-import Adjust from "../../../Assets/Images/Adjust.png";
-import FireEquation from "../../../Assets/Images/FireEquation.png";
+import EquControl from "../../../Assets/Images/EquationControl.png";
 import GoodJob from "../../../Assets/Images/GoodJob.png";
 import Hotbar from "../../../Assets/Images/Hotbar.png";
 import Spawning from "../../../Assets/Images/Spawning.png";
@@ -44,13 +43,6 @@ const SLIDES = [
       accentColor:" #71f724",
     },
     {
-      imageSrc: Adjust,
-      imageAlt: "Adjust",
-      title: "Adjust Equations",
-      description: "You can change the equation before you fire so that you wont accidentally hit a bomb.",
-      accentColor: " #24f760",
-    },
-    {
       imageSrc: Spawning,
       imageAlt: "Objects",
       title: "Fruits and Bombs",
@@ -58,10 +50,10 @@ const SLIDES = [
       accentColor:" #24f0f7",
     },
     {
-      imageSrc: FireEquation,
-      imageAlt: "Fire",
+      imageSrc: EquControl,
+      imageAlt: "EquControl",
       title: "Fire the Equation",
-      description: "Think before you fire! Look at the preview of your equation first before firing to avoid hitting a bomb.",
+      description: "Think before you fire! Look at the preview of your equation first before firing to avoid hitting a bomb. You can change the equation before you fire so that you wont accidentally hit a bomb.",
       accentColor:" #2455f7",
     },
     {
