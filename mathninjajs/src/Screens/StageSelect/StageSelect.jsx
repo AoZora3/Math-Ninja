@@ -61,16 +61,18 @@ export default function StageSelect({
                 <div className="stage-info">
                   <h3>{stage.title}</h3>
                   <p>{stage.description}</p>
-                  {renderStageStars(stage)}
-                  <button
-                    type="button"
-                    className="stage-play-button"
-                    disabled={!unlocked}
-                    aria-label={unlocked ? `Play Stage ${stage.number}: ${stage.title}` : `Stage ${stage.number}: ${stage.title} locked`}
-                    onClick={() => setScreen(stage.key)}
-                  >
-                    {unlocked ? "PLAY" : "LOCKED"}
-                  </button>
+                  <div className="stage-stars-play-row">
+                    {renderStageStars(stage)}
+                    <button
+                      type="button"
+                      className="stage-play-button"
+                      disabled={!unlocked}
+                      aria-label={unlocked ? `Play Stage ${stage.number}: ${stage.title}` : `Stage ${stage.number}: ${stage.title} locked`}
+                      onClick={() => setScreen(stage.key)}
+                    >
+                      {unlocked ? "PLAY" : "LOCKED"}
+                    </button>
+                  </div>
                 </div>
               </article>
             );

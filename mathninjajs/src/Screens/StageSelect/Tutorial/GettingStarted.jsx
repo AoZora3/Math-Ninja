@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import BoardSlide from "./BoardSlider.jsx";
 import "../../../Assets/Styles/GettingStarted.css";
-import Temp from "../../../Assets/Images/TempImage.png";
 import Adjust from "../../../Assets/Images/Adjust.png";
 import FireEquation from "../../../Assets/Images/FireEquation.png";
 import GoodJob from "../../../Assets/Images/GoodJob.png";
@@ -13,10 +12,11 @@ import Hearts from "../../../Assets/Images/Hearts.png";
 import Time from "../../../Assets/Images/Time.png";
 import Stars from "../../../Assets/Images/Stars.png";
 import Edit from "../../../Assets/Images/EditEquation.png";
+import MathNinjaLogo from "../../../Assets/Images/MathNinjaLogo.png";
 
 const SLIDES = [
     {
-        imageSrc: Temp,
+        imageSrc: MathNinjaLogo,
         imageAlt: "Logus",
         title: "Welcome!",
         description: "Welcome to MathNinja Where you Slice • Solve • Master.",
