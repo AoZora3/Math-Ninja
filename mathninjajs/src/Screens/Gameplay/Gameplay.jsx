@@ -302,15 +302,17 @@ export default function Gameplay({ onBack, onWin }) {
           <Combo multiplier={comboMultiplier} streak={streak} />
         </div>
 
-        <div className="health-block" aria-label="Health">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <span
-              key={index}
-              className={`health-icon ${index < lives ? 'filled' : 'empty'}`}
-              aria-hidden="true"
-            />
-          ))}
-        </div>
+        {!isEndless && (
+          <div className="health-block" aria-label="Health">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <span
+                key={index}
+                className={`health-icon ${index < lives ? 'filled' : 'empty'}`}
+                aria-hidden="true"
+              />
+            ))}
+          </div>
+        )}
 
         <button type="button" className="back-small-btn" onClick={() => setIsPaused(true)}>
           Pause

@@ -584,6 +584,37 @@ test('a winning gameplay result overlays the game with vertical star criteria', 
   expect(criteria[2]).toHaveTextContent('Finish within 2 minutes1:20');
 });
 
+test('endless mode hides the health UI and keeps the timer as the only run meter', () => {
+  render(
+    <GameContext.Provider value={{
+      presets: [],
+      activePreset: null,
+      setActivePreset: jest.fn(),
+      score: 0,
+      lives: 3,
+      timeLeft: 60,
+      elapsedTime: 0,
+      isEndless: true,
+      endlessHighScore: 0,
+      isPaused: false,
+      setIsPaused: jest.fn(),
+      hitRate: 100,
+      comboMultiplier: 1,
+      streak: 0,
+      spawnedObjects: [],
+      fireEquationStrike: jest.fn(),
+      startGameplay: jest.fn(),
+      handleCoefficientSlider: jest.fn()
+    }}>
+      <Gameplay onWin={jest.fn()} />
+    </GameContext.Provider>
+  );
+
+  expect(screen.queryByLabelText('Health')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Time remaining 01:00')).toBeInTheDocument();
+  expect(screen.getByLabelText('Time elapsed 00:00')).toBeInTheDocument();
+});
+
 test('renders preset cards safely when coefficients are missing', () => {
   expect(() => {
     render(
@@ -783,6 +814,7 @@ test('Stage 3 gameplay toggles between an exponential and its inverse logarithm'
 });
 
 test('stars reflect health, hit rate, and the two-minute goal threshold', () => {
+  expect(calculateStars({ won: true, lives: 3, hitRate: 100, elapsedSeconds: 62 })).toBe(3);
   expect(calculateStars({ won: true, lives: 2, hitRate: 80, elapsedSeconds: 120 })).toBe(3);
   expect(calculateStars({ won: true, lives: 1, hitRate: 79.9, elapsedSeconds: 121 })).toBe(0);
   expect(calculateStars({ won: false, lives: 3, hitRate: 100, elapsedSeconds: 60 })).toBe(0);
