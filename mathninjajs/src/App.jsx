@@ -21,6 +21,7 @@ import BuildChallenge from "./Screens/BuildChallenge/BuildChallenge.jsx";
 import EndlessMode from "./Screens/EndlessMode/EndlessMode.jsx";
 import { storage } from "./Utils/storage";
 import { calculateStars } from "./Screens/StageResult/StageResult.jsx";
+import { getTrigonometricFunctionName } from "./Game/Equations/EquationText.js";
 
 // Step 4 represents the Endless card; progress is stored locally on this device.
 const PROGRESSION_STORAGE_KEY = "mathNinjaUnlockedStep";
@@ -118,6 +119,36 @@ function createPresetByType(type) {
       coefficients: { a: 1, b: 0 },
       minMax: { a: [0, 3], b: [-5, 5] },
       fn: (x, c) => c.a * Math.sin(x) + c.b
+    };
+  }
+
+  const trigFunctions = {
+    "trig-sin": { trigFunction: "sin", fn: Math.sin },
+    "trig-cos": { trigFunction: "cos", fn: Math.cos },
+    "trig-tan": { trigFunction: "tan", fn: Math.tan },
+    "trig-sec": { trigFunction: "sec", fn: (x) => 1 / Math.cos(x) },
+    "trig-cot": { trigFunction: "cot", fn: (x) => 1 / Math.tan(x) },
+    "trig-csc": { trigFunction: "csc", fn: (x) => 1 / Math.sin(x) }
+  };
+
+  if (trigFunctions[type]) {
+    const { trigFunction, fn } = trigFunctions[type];
+    const functionName = getTrigonometricFunctionName(trigFunction);
+    return {
+      id: baseId,
+      type: "trigonometric",
+      trigFunction,
+      waveType: `endless-${trigFunction}`,
+      label: `y = a ${trigFunction}(x) + b`,
+      equation: `y = 1 ${trigFunction}(x) + 0`,
+      title: `${functionName.toUpperCase()} FUNCTION`,
+      description: `The coefficient a scales the ${functionName.toLowerCase()} function, while b shifts it up or down.`,
+      coefficients: { a: 1, b: 0 },
+      minMax: { a: [-3, 3], b: [-5, 5] },
+      fn: (x, c) => {
+        const result = fn(x);
+        return Number.isFinite(result) ? c.a * result + c.b : Number.NaN;
+      }
     };
   }
 
@@ -388,7 +419,7 @@ function AppContent({ formulaUnlocks, setFormulaUnlocks }) {
             : currentStage === "stage3"
               ? ["exponential"]
               : currentStage === "endless"
-                ? ["linear", "quadratic", "cubic", "trigonometric", "exponential", "logarithmic"]
+                ? ["linear", "quadratic", "cubic", "trig-sin", "trig-cos", "trig-tan", "trig-sec", "trig-cot", "trig-csc", "exponential", "logarithmic"]
                 : ["linear", "quadratic", "cubic"]
         }
         onBack={() => setScreen(currentStage)}

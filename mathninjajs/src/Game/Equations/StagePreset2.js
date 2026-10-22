@@ -2,6 +2,7 @@ export const stage2Presets = [
   {
     id: 'sin-basic',
     type: 'trigonometric',
+    trigFunction: 'sin',
     waveType: 'sin-basic',
     label: 'y = a·sin(x) + b',
     equation: 'y = 1·sin(x) + 0',
@@ -18,6 +19,7 @@ export const stage2Presets = [
   {
     id: 'sin-phase',
     type: 'trigonometric',
+    trigFunction: 'sin',
     waveType: 'sin-phase',
     label: 'y = sin(ax + b)',
     equation: 'y = sin(1x + 0)',
@@ -34,6 +36,7 @@ export const stage2Presets = [
   {
     id: 'cos-basic',
     type: 'trigonometric',
+    trigFunction: 'cos',
     waveType: 'cos-basic',
     label: 'y = a·cos(x) + b',
     equation: 'y = 1·cos(x) + 0',
@@ -50,6 +53,7 @@ export const stage2Presets = [
   {
     id: 'sin-cos-mix',
     type: 'trigonometric',
+    trigFunction: 'sin',
     waveType: 'sin-cos-mix',
     label: 'y = a·sin(x) + b·cos(x)',
     equation: 'y = 1·sin(x) + 0·cos(x)',

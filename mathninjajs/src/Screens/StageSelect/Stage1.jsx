@@ -1,5 +1,6 @@
 import { useContext } from "react";
 import { GameContext } from "../../Context/GameContext.jsx";
+import { getEquationType, getPolynomialEquation } from "../../Game/Equations/EquationText.js";
 import { BUILD_CHALLENGE_BY_STAGE } from "../../Game/Equations/BuildChallengeData.js";
 import "../../Assets/Styles/Stages.css";
 
@@ -7,30 +8,15 @@ export default function Stage1({ setScreen, onEditPreset, onAddEquation, onConti
   const { presets, setActivePreset, formulaUnlocks = {} } = useContext(GameContext);
 
   const getPresetSummary = (preset) => {
-    const coefficients = preset.coefficients || { a: 1, b: 0 };
-    const a = Number(coefficients.a ?? 1);
-    const b = Number(coefficients.b ?? 0);
-
-    if (preset.type === "cubic") {
-      return {
-        equation: `y = ${a}x³ ${b >= 0 ? '+' : '-'} ${Math.abs(b)}`,
-        title: "CUBIC EQUATION",
-        description: "An S-shaped graph with adjustable stretch and vertical shift."
-      };
-    }
-
-    if (preset.type === "quadratic") {
-      return {
-        equation: `y = ${a}x² ${b >= 0 ? '+' : '-'} ${Math.abs(b)}`,
-        title: "QUADRATIC EQUATION",
-        description: "A curved graph with a vertical stretch and shift."
-      };
-    }
-
+    const equationType = getEquationType(preset);
     return {
-      equation: `y = ${a}x ${b >= 0 ? '+' : '-'} ${Math.abs(b)}`,
-      title: "LINEAR EQUATION",
-      description: "A straight-line graph with adjustable slope and intercept."
+      equation: getPolynomialEquation(preset),
+      title: `${equationType.toUpperCase()} EQUATION`,
+      description: equationType === "linear"
+        ? "A straight-line graph with adjustable slope and intercept."
+        : equationType === "cubic"
+          ? "An S-shaped graph with adjustable stretch and vertical shift."
+          : "A curved graph with a vertical stretch and shift."
     };
   };
 

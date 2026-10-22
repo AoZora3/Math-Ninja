@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useId, useMemo, useState } from 'react';
 import '../../Assets/Styles/BuildChallenge.css';
 
 const GRAPH_WIDTH = 320;
@@ -35,6 +35,13 @@ function formatCoefficient(value) {
   return Number(value).toFixed(1).replace(/\.0$/, '');
 }
 
+function formatEquationText(text) {
+  return text
+    .replace(/\*/g, '·')
+    .replace(/\^2/g, '²')
+    .replace(/\^3/g, '³');
+}
+
 function shuffleOptions(options) {
   const shuffled = [...options];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -45,6 +52,7 @@ function shuffleOptions(options) {
 }
 
 export default function BuildChallenge({ step, onBack, onComplete, onContinue }) {
+  const graphClipId = `challenge-plot-${useId().replace(/:/g, '')}`;
   const [options] = useState(() => shuffleOptions(step?.options || []));
   const [aValue, setAValue] = useState(0);
   const [bValue, setBValue] = useState(0);
@@ -57,6 +65,7 @@ export default function BuildChallenge({ step, onBack, onComplete, onContinue })
     [step, targetCoefficients.a, targetCoefficients.b]
   );
   const selectedOption = options.find((option) => option.id === selectedOptionId);
+  const choiceColor = selectedOption ? (selectedOption.isCorrect ? '#34d399' : '#fca5a5') : '#34d399';
   const previewPoints = useMemo(
     () => (selectedOption ? sampleCurve(selectedOption.fn, aValue, bValue) : []),
     [selectedOption, aValue, bValue]
@@ -68,7 +77,7 @@ export default function BuildChallenge({ step, onBack, onComplete, onContinue })
     Math.abs(bValue - targetCoefficients.b) < 0.05
   );
 
-  const renderCoefficientText = (text, keyPrefix) => text
+  const renderCoefficientText = (text, keyPrefix) => formatEquationText(text)
     .split(/(\ba\b|\bb\b)/g)
     .map((part, index) => {
       if (part === 'a') {
@@ -80,7 +89,7 @@ export default function BuildChallenge({ step, onBack, onComplete, onContinue })
       return <React.Fragment key={`${keyPrefix}-text-${index}`}>{part}</React.Fragment>;
     });
 
-  const renderChallengeEquation = () => step.template
+  const renderChallengeEquation = () => formatEquationText(step.template)
     .split(/(\[\s*\?\s*\]|\ba\b|\bb\b)/g)
     .map((part, index) => {
       if (/^\[\s*\?\s*\]$/.test(part)) {
@@ -152,34 +161,54 @@ export default function BuildChallenge({ step, onBack, onComplete, onContinue })
             </label>
           </div>
 
-          <div style={{ display: 'flex', gap: 12 }}>
-            {[
-              { label: selectedOption ? 'Target' : 'Target curve', points: targetPoints, color: '#7dd3fc' },
-              ...(selectedOption ? [{ label: 'Your choice', points: previewPoints, color: selectedOption.isCorrect ? '#34d399' : '#fca5a5' }] : [])
-            ].map((graph) => (
-              <div key={graph.label} style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ marginBottom: 6, fontSize: 12, opacity: 0.8 }}>{graph.label}</div>
-                <svg viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`} width="100%" height={220} className="challenge-graph">
-                  <g className="challenge-grid">
-                    {Array.from({ length: 11 }).map((_, index) => {
-                      const x = PADDING + (index / 10) * (GRAPH_WIDTH - PADDING * 2);
-                      const y = PADDING + (index / 10) * (GRAPH_HEIGHT - PADDING * 2);
-                      return (
-                        <g key={`grid-${index}`}>
-                          <line x1={x} y1={PADDING} x2={x} y2={GRAPH_HEIGHT - PADDING} />
-                          <line x1={PADDING} y1={y} x2={GRAPH_WIDTH - PADDING} y2={y} />
-                        </g>
-                      );
-                    })}
-                  </g>
-                  <g className="challenge-axes">
-                    <line x1={PADDING} y1={GRAPH_HEIGHT / 2} x2={GRAPH_WIDTH - PADDING} y2={GRAPH_HEIGHT / 2} />
-                    <line x1={GRAPH_WIDTH / 2} y1={PADDING} x2={GRAPH_WIDTH / 2} y2={GRAPH_HEIGHT - PADDING} />
-                  </g>
-                  {graph.points.length > 0 && <path d={buildLine(graph.points)} fill="none" stroke={graph.color} strokeWidth="2.5" />}
-                </svg>
-              </div>
-            ))}
+          <div className="challenge-graph-container">
+            <svg viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`} width="100%" height={220} className="challenge-graph" role="img" aria-label="Target and choice graph">
+              <defs>
+                <clipPath id={graphClipId}>
+                  <rect x={PADDING} y={PADDING} width={GRAPH_WIDTH - PADDING * 2} height={GRAPH_HEIGHT - PADDING * 2} />
+                </clipPath>
+              </defs>
+              <g className="challenge-grid">
+                {Array.from({ length: 11 }).map((_, index) => {
+                  const x = PADDING + (index / 10) * (GRAPH_WIDTH - PADDING * 2);
+                  const y = PADDING + (index / 10) * (GRAPH_HEIGHT - PADDING * 2);
+                  return (
+                    <g key={`grid-${index}`}>
+                      <line x1={x} y1={PADDING} x2={x} y2={GRAPH_HEIGHT - PADDING} />
+                      <line x1={PADDING} y1={y} x2={GRAPH_WIDTH - PADDING} y2={y} />
+                    </g>
+                  );
+                })}
+              </g>
+              <g className="challenge-axes">
+                <line x1={PADDING} y1={GRAPH_HEIGHT / 2} x2={GRAPH_WIDTH - PADDING} y2={GRAPH_HEIGHT / 2} />
+                <line x1={GRAPH_WIDTH / 2} y1={PADDING} x2={GRAPH_WIDTH / 2} y2={GRAPH_HEIGHT - PADDING} />
+              </g>
+              <g clipPath={`url(#${graphClipId})`}>
+                {targetPoints.length > 0 && (
+                  <path className="challenge-target-curve" d={buildLine(targetPoints)} fill="none" stroke="#7dd3fc" strokeWidth="2.5" />
+                )}
+                {previewPoints.length > 0 && (
+                  <path
+                    className="challenge-choice-curve"
+                    d={buildLine(previewPoints)}
+                    fill="none"
+                    stroke={choiceColor}
+                    strokeWidth="2.5"
+                  />
+                )}
+              </g>
+            </svg>
+            <div className="challenge-graph-legend" aria-label="Graph legend">
+              <span><i className="challenge-legend-target" />Target</span>
+              <span>
+                <i
+                  className="challenge-legend-choice"
+                  style={{ borderColor: choiceColor }}
+                />
+                Your choice
+              </span>
+            </div>
           </div>
         </div>
 
@@ -201,7 +230,7 @@ export default function BuildChallenge({ step, onBack, onComplete, onContinue })
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong>{option.label}</strong>
+                <strong>{formatEquationText(option.label)}</strong>
                 {selectedOptionId === option.id && isSolved && <span>✓</span>}
               </div>
             </button>

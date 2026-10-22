@@ -4,7 +4,13 @@ import Combo from '../../Components/Combo.jsx';
 import Timer from '../../Components/Timer.jsx';
 import StageResult from '../StageResult/StageResult.jsx';
 import { GAME_DURATION_SECONDS, GOAL_SCORE } from '../../Context/GameContext.jsx';
-import { getTrigonometricEquation } from '../../Game/Equations/EquationText.js';
+import {
+  getEquationType,
+  getPolynomialEquation,
+  getTrigonometricEquation,
+  getTrigonometricFunction,
+  getTrigonometricFunctionName
+} from '../../Game/Equations/EquationText.js';
 import { getStage3Equation } from '../../Game/Equations/Stage3Equation.js';
 import { BUILD_CHALLENGE_STEPS } from '../../Game/Equations/BuildChallengeData.js';
 import appleSprite from '../../Assets/Sprites/Apple_Sprite.png';
@@ -14,7 +20,6 @@ import bombSprite from '../../Assets/Sprites/Bomb_Sprite.png';
 import AppleRain from './AppleRain.jsx';
 import '../../Assets/Styles/Gameplay.css';
 
-const POLYNOMIAL_TYPE_CYCLE = ['linear', 'quadratic', 'cubic'];
 const CHALLENGE_PRESET_IDS = new Set(BUILD_CHALLENGE_STEPS.map((step) => step.unlockedPresetId));
 const EQUATION_TYPE_LABELS = {
   linear: 'Linear',
@@ -30,21 +35,16 @@ function getEquationText(preset) {
   const { a = 0, b = 0, h = 0, k = 0, l = 1 } = preset.coefficients || {};
   const inversePrefix = preset.inverse ? '-' : '';
 
-  if (preset.type === 'quadratic') {
-    return `y = ${a}x² ${b < 0 ? '-' : '+'} ${Math.abs(b)}`;
-  }
-
-  // Render cubic presets with the same coefficients used by their graph function.
-  if (preset.type === 'cubic') {
-    return `y = ${a}x³ ${b < 0 ? '-' : '+'} ${Math.abs(b)}`;
-  }
-
   if (preset.type === 'trigonometric') {
     return getTrigonometricEquation(preset);
   }
 
-  if (preset.type === 'exponential' && preset.inverseFn) {
+  if ((preset.type === 'exponential' && preset.inverseFn) || preset.type === 'logarithmic') {
     return getStage3Equation(preset, Boolean(preset.inverse));
+  }
+
+  if (['linear', 'quadratic', 'cubic'].includes(preset.type)) {
+    return getPolynomialEquation(preset);
   }
 
   if (preset.type === 'exponential') {
@@ -59,7 +59,7 @@ function getEquationText(preset) {
     return `y = ${inversePrefix}${a}e^(-${b}(x - ${h})) + ${k}`;
   }
 
-  return `y = ${a}x ${b < 0 ? '-' : '+'} ${Math.abs(b)}`;
+  return preset.equation || 'y = 0';
 }
 
 function buildCurvePoints(preset, width = 320, height = 260) {
@@ -233,32 +233,22 @@ export default function Gameplay({ onBack, onWin }) {
     setIsPreviewVisible(true);
   };
 
-  const switchEquationType = () => {
-    const availableTypes = POLYNOMIAL_TYPE_CYCLE.filter((type) =>
-      availablePresets.some((preset) => preset.type === type)
-    );
-    if (availableTypes.length < 2) return;
+  const switchEquation = () => {
+    if (availablePresets.length < 2) return;
 
-    const currentIndex = availableTypes.indexOf(activeWeapon?.type);
-    const nextType = availableTypes[(currentIndex + 1) % availableTypes.length];
-    const nextPreset = availablePresets.find((preset) => preset.type === nextType);
+    const currentIndex = availablePresets.findIndex((preset) => preset.id === activeWeapon?.id);
+    const nextPreset = availablePresets[(currentIndex + 1) % availablePresets.length];
     if (nextPreset) handlePreviewEquation(nextPreset);
   };
 
-  const availablePolynomialTypes = POLYNOMIAL_TYPE_CYCLE.filter((type) =>
-    availablePresets.some((preset) => preset.type === type)
-  );
-  const nextPolynomialType = (() => {
-    const currentIndex = availablePolynomialTypes.indexOf(activeWeapon?.type);
-    return availablePolynomialTypes.length < 2 || currentIndex < 0
-      ? null
-      : availablePolynomialTypes[(currentIndex + 1) % availablePolynomialTypes.length];
-  })();
+  const getHotbarGroup = (preset) => preset.type === 'trigonometric'
+    ? `trigonometric-${getTrigonometricFunction(preset)}`
+    : preset.type;
 
   const endlessHotbarPresets = isEndless
-    ? [...new Set(availablePresets.map((preset) => preset.type))].map((type) => (
-      availablePresets.find((preset) => preset.type === type && preset.id === activeWeapon?.id) ||
-      availablePresets.find((preset) => preset.type === type)
+    ? [...new Set(availablePresets.map(getHotbarGroup))].map((group) => (
+      availablePresets.find((preset) => getHotbarGroup(preset) === group && preset.id === activeWeapon?.id) ||
+      availablePresets.find((preset) => getHotbarGroup(preset) === group)
     ))
     : availablePresets;
 
@@ -268,7 +258,8 @@ export default function Gameplay({ onBack, onWin }) {
       return;
     }
 
-    const typePresets = availablePresets.filter((item) => item.type === preset.type);
+    const group = getHotbarGroup(preset);
+    const typePresets = availablePresets.filter((item) => getHotbarGroup(item) === group);
     const currentIndex = typePresets.findIndex((item) => item.id === activeWeapon?.id);
     const nextPreset = typePresets[(currentIndex + 1) % typePresets.length] || preset;
     handlePreviewEquation(nextPreset);
@@ -281,22 +272,6 @@ export default function Gameplay({ onBack, onWin }) {
 
   const liveCurvePoints = buildCurvePoints(effectiveWeapon || activeWeapon || availablePresets[0], 320, 260);
   const firedCurvePoints = buildCurvePoints(firedEquation?.preset, 320, 260);
-
-  if (resultState) {
-    return (
-      <StageResult
-        won={resultState === 'won'}
-        score={score}
-        lives={lives}
-        hitRate={hitRate}
-        elapsedSeconds={isEndless ? elapsedTime : GAME_DURATION_SECONDS - timeLeft}
-        isEndless={isEndless}
-        highScore={endlessHighScore}
-        onRetry={handleRetry}
-        onBack={onBack}
-      />
-    );
-  }
 
   return (
     <div className="gameplay-shell">
@@ -438,7 +413,7 @@ export default function Gameplay({ onBack, onWin }) {
             <span className="hud-label">
               {isInverted && activeWeapon?.type === 'exponential'
                 ? 'LOGARITHMIC EQUATION: '
-                : `${(EQUATION_TYPE_LABELS[activeWeapon?.type] || 'Equation')} EQUATION: `}
+                : `${(EQUATION_TYPE_LABELS[getEquationType(activeWeapon)] || 'Equation')} EQUATION: `}
             </span>
             <h2>{getEquationText(effectiveWeapon || activeWeapon)}</h2>
           </div>
@@ -464,15 +439,16 @@ export default function Gameplay({ onBack, onWin }) {
           })}
         </div>
         <div className="equation-action-row">
-          {activeWeapon?.type === 'exponential' ? (
+          {activeWeapon?.type === 'exponential' && (
             <button type="button" className="type-switch" onClick={() => setIsInverted((prev) => !prev)}>
               {isInverted ? 'Show exponential' : 'Show inverse log'}
             </button>
-          ) : nextPolynomialType ? (
-            <button type="button" className="type-switch" onClick={switchEquationType}>
-              Switch to {EQUATION_TYPE_LABELS[nextPolynomialType].toLowerCase()}
+          )}
+          {availablePresets.length > 1 && (
+            <button type="button" className="type-switch" onClick={switchEquation}>
+              Switch equation
             </button>
-          ) : null}
+          )}
 
           <button type="button" className="fire-button" onClick={() => handleFireEquation(effectiveWeapon || activeWeapon)} disabled={!activeWeapon || Boolean(resultState)}>
             Fire equation
@@ -489,12 +465,15 @@ export default function Gameplay({ onBack, onWin }) {
         <div className="hotbar-grid">
           {endlessHotbarPresets.map((preset) => {
             const isSelected = isEndless
-              ? preset.type === activeWeapon?.type
+              ? getHotbarGroup(preset) === getHotbarGroup(activeWeapon || {})
               : preset.id === selectedPresetId;
+            const presetType = preset.type === 'trigonometric'
+              ? getTrigonometricFunctionName(getTrigonometricFunction(preset))
+              : EQUATION_TYPE_LABELS[getEquationType(preset)] || getEquationType(preset);
             return (
               <div className={`hotbar-entry ${isSelected ? 'selected' : ''}`} key={preset.id}>
                 <button type="button" className="hotbar-button" onClick={() => selectHotbarPreset(preset)}>
-                  <span>{EQUATION_TYPE_LABELS[preset.type] || preset.type}</span>
+                  <span>{presetType}</span>
                   {getEquationText(preset)}
                 </button>
               </div>
@@ -503,6 +482,19 @@ export default function Gameplay({ onBack, onWin }) {
         </div>
       </section>
 
+      {resultState && (
+        <StageResult
+          won={resultState === 'won'}
+          score={score}
+          lives={lives}
+          hitRate={hitRate}
+          elapsedSeconds={isEndless ? elapsedTime : GAME_DURATION_SECONDS - timeLeft}
+          isEndless={isEndless}
+          highScore={endlessHighScore}
+          onRetry={handleRetry}
+          onBack={onBack}
+        />
+      )}
     </div>
   );
 }

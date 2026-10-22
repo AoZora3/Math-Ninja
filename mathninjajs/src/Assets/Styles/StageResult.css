@@ -15,6 +15,16 @@
     linear-gradient(145deg, #171a25 0%, #29202b 58%, #25252b 100%);
 }
 
+.gameplay-shell > .result-overlay.result-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  overflow-y: auto;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 14, 22, 0.9);
+}
+
 .pause-screen {
   position: fixed;
   inset: 0;
@@ -63,16 +73,44 @@
 }
 
 .result-stars {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  min-height: 54px;
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
 }
 
 .result-star {
+  width: 30px;
+  flex: 0 0 30px;
   color: #536171;
-  font-size: 44px;
+  font-size: 28px;
   line-height: 1;
+  text-align: center;
+}
+
+.result-star-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 4px 10px;
+  border: 1px solid rgba(212, 226, 237, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.result-star-description {
+  flex: 1;
+  color: #d6e0e8;
+  font-size: 14px;
+}
+
+.result-star-value {
+  color: #f8fafc;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .result-star.earned {
@@ -109,33 +147,6 @@
 .result-score strong {
   font-size: 42px;
   line-height: 1.1;
-}
-
-.result-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin: 0;
-}
-
-.result-stats div {
-  display: grid;
-  gap: 5px;
-  padding: 12px 6px;
-  border: 1px solid rgba(212, 226, 237, 0.12);
-  border-radius: 6px;
-}
-
-.result-stats dt {
-  color: #93a4b3;
-  font-size: 12px;
-}
-
-.result-stats dd {
-  margin: 0;
-  color: #f8fafc;
-  font-size: 17px;
-  font-weight: 800;
 }
 
 .result-actions {

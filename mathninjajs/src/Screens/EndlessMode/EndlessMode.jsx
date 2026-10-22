@@ -1,7 +1,30 @@
 import "../../Assets/Styles/Stages.css";
+import {
+  getPolynomialEquation,
+  getTrigonometricEquation,
+  getTrigonometricFunction,
+  getTrigonometricFunctionName
+} from "../../Game/Equations/EquationText.js";
+import { getStage3Equation } from "../../Game/Equations/Stage3Equation.js";
+
+const getPresetGroup = (preset) => preset.type === "trigonometric"
+  ? `trigonometric-${getTrigonometricFunction(preset)}`
+  : preset.type;
+
+const getPresetName = (preset) => preset.type === "trigonometric"
+  ? getTrigonometricFunctionName(getTrigonometricFunction(preset))
+  : preset.type.charAt(0).toUpperCase() + preset.type.slice(1);
+
+const getPresetEquation = (preset) => {
+  if (preset.type === "trigonometric") return getTrigonometricEquation(preset);
+  if (["linear", "quadratic", "cubic"].includes(preset.type)) return getPolynomialEquation(preset);
+  if (preset.formulaKind) return getStage3Equation(preset);
+  return preset.equation || preset.label;
+};
 
 export default function EndlessMode({ presets, highScore = 0, onBack, onAddEquation, onStart }) {
-  const equationTypes = [...new Set(presets.map((preset) => preset.type))];
+  const equationTypes = [...new Set(presets.map(getPresetGroup))]
+    .map((group) => presets.find((preset) => getPresetGroup(preset) === group));
 
   return (
     <div className="screen">
@@ -23,10 +46,14 @@ export default function EndlessMode({ presets, highScore = 0, onBack, onAddEquat
 
         <section className="endless-presets-block" aria-labelledby="endless-presets-title">
           <h2 id="endless-presets-title">Equation types in your hotbar</h2>
-          <p>Choose an equation type during the run to switch curves.</p>
+          <p>Choose a function during the run to switch curves.</p>
           {equationTypes.length > 0 ? (
             <ul>
-              {equationTypes.map((type) => <li key={type}>{type}</li>)}
+              {equationTypes.map((preset) => (
+                <li key={getPresetGroup(preset)}>
+                  <strong>{getPresetName(preset)}:</strong> {getPresetEquation(preset)}
+                </li>
+              ))}
             </ul>
           ) : (
             <p>No equation types are unlocked yet.</p>

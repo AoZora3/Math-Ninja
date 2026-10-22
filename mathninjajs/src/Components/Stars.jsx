@@ -1,12 +1,18 @@
-export default function Stars({ count = 0 }) {
+export default function Stars({ count = 0, criteria = [] }) {
 	return (
-		<div className="result-stars" role="img" aria-label={`${count} out of 3 stars`}>
-			{[0, 1, 2].map((star) => (
-				<span className={star < count ? 'result-star earned' : 'result-star'} key={star} aria-hidden="true">
-					{star < count ? '★' : '☆'}
-				</span>
-			))}
-		</div>
+		<ul className="result-stars" aria-label={`${count} out of 3 stars`}>
+			{criteria.map((criterion, index) => {
+				const earned = index < count;
+				return (
+					<li className="result-star-row" key={criterion.label}>
+						<span className={`result-star ${earned ? 'earned' : ''}`} aria-hidden="true">
+							{earned ? '★' : '☆'}
+						</span>
+						<span className="result-star-description">{criterion.label}</span>
+						<strong className="result-star-value">{criterion.value}</strong>
+					</li>
+				);
+			})}
+		</ul>
 	);
 }
-

@@ -26,9 +26,9 @@ const ENDLESS_TIME_PER_FRUIT_SECONDS = 5;
 const ENDLESS_TIME_PER_BOMB_SECONDS = 5;
 
 // Apply the independent SFX setting to each one-shot audio player.
-function playSoundEffect(sound, volume) {
+function playSoundEffect(sound, volume, gain = 1) {
   const audio = new Audio(sound);
-  audio.volume = volume / 100;
+  audio.volume = Math.min(1, (volume / 100) * gain);
   const playback = audio.play();
   playback?.catch(() => {});
 }
@@ -266,7 +266,7 @@ export function GameProvider({ children, formulaUnlocks = {}, setFormulaUnlocks 
     }
 
     if (fruitHits > 0) playSoundEffect(sliceHitSound, sfxVolume);
-    if (lifeChange > 0) playSoundEffect(bombSound, sfxVolume);
+    if (lifeChange > 0) playSoundEffect(bombSound, sfxVolume, 1.25);
     if (fruitHits === 0 && lifeChange === 0) playSoundEffect(sliceMissSound, sfxVolume);
 
     const awardedScore = scoreChange * comboMultiplier * formulaMultiplier;

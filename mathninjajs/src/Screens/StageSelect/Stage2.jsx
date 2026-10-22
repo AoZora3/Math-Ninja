@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { GameContext } from "../../Context/GameContext.jsx";
-import { getTrigonometricEquation } from "../../Game/Equations/EquationText.js";
+import { getPolynomialEquation, getTrigonometricEquation } from "../../Game/Equations/EquationText.js";
 import { BUILD_CHALLENGE_BY_STAGE } from "../../Game/Equations/BuildChallengeData.js";
 import "../../Assets/Styles/Stages.css";
 
@@ -8,9 +8,6 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
   const { presets, setActivePreset, formulaUnlocks = {} } = useContext(GameContext);
 
   const getPresetSummary = (preset) => {
-    const coefficients = preset.coefficients || { a: 1, b: 0, c: 0, d: 0 };
-    const a = Number(coefficients.a ?? 1);
-    const b = Number(coefficients.b ?? 1);
     if (preset.type === "trigonometric") {
       return {
         equation: getTrigonometricEquation(preset),
@@ -21,14 +18,14 @@ export default function Stage2({ setScreen, onEditPreset, onAddEquation, onConti
 
     if (preset.type === "quadratic") {
       return {
-        equation: `y = ${a}x² ${b >= 0 ? '+' : '-'} ${Math.abs(b)}`,
+        equation: getPolynomialEquation(preset),
         title: "QUADRATIC EQUATION",
         description: "A curved graph with a vertical stretch and shift."
       };
     }
 
     return {
-      equation: `y = ${a}x ${b >= 0 ? '+' : '-'} ${Math.abs(b)}`,
+      equation: getPolynomialEquation(preset),
       title: "LINEAR EQUATION",
       description: "A straight-line graph with adjustable slope and intercept."
     };

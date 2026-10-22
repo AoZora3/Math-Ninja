@@ -44,6 +44,44 @@
   background: #111827;
 }
 
+.challenge-graph-container {
+  min-width: 0;
+}
+
+.challenge-graph-legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  width: fit-content;
+  margin: -4px auto 0;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  font-size: 12px;
+}
+
+.challenge-graph-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.challenge-graph-legend i {
+  display: inline-block;
+  width: 14px;
+  border-top: 3px solid;
+}
+
+.challenge-legend-target {
+  border-color: #7dd3fc;
+}
+
+.challenge-legend-choice {
+  border-color: #34d399;
+}
+
 .challenge-grid line {
   stroke: #2c3a4d;
   stroke-width: 1;

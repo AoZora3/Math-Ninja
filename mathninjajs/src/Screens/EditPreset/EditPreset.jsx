@@ -1,37 +1,28 @@
 import { useEffect, useState } from 'react';
 import PresetCard from '../../Components/PresetCards.jsx';
 import MathGraph from '../Gameplay/MathGraph';
-import { getTrigonometricEquation } from '../../Game/Equations/EquationText.js';
+import {
+  getPolynomialEquation,
+  getTrigonometricEquation,
+  getTrigonometricFunctionName
+} from '../../Game/Equations/EquationText.js';
 import { getStage3Equation } from '../../Game/Equations/Stage3Equation.js';
-
-const formatNumber = (value) => {
-  const rounded = Number(value);
-  if (!Number.isFinite(rounded)) return '0';
-  return Number(rounded.toFixed(2)).toString();
-};
 
 const buildEquationString = (preset) => {
   if (!preset) return 'y = 0';
 
-  const a = Number(preset.coefficients?.a ?? 0);
-  const b = Number(preset.coefficients?.b ?? 0);
-  if (preset.type === 'exponential' && preset.inverseFn) {
+  if ((preset.type === 'exponential' && preset.inverseFn) || preset.type === 'logarithmic') {
     return getStage3Equation(preset);
   }
   if (preset.type === 'trigonometric') {
     return getTrigonometricEquation(preset);
   }
 
-  if (preset.type === 'quadratic') {
-    return `y = ${formatNumber(a)}x² ${b >= 0 ? '+' : '-'} ${formatNumber(Math.abs(b))}`;
+  if (['linear', 'quadratic', 'cubic'].includes(preset.type)) {
+    return getPolynomialEquation(preset);
   }
 
-  // Preserve cubic notation while coefficients are edited.
-  if (preset.type === 'cubic') {
-    return `y = ${formatNumber(a)}x³ ${b >= 0 ? '+' : '-'} ${formatNumber(Math.abs(b))}`;
-  }
-
-  return `y = ${formatNumber(a)}x ${b >= 0 ? '+' : '-'} ${formatNumber(Math.abs(b))}`;
+  return preset.equation || 'y = 0';
 };
 
 export default function EditPreset({ currentPreset, onBack, onSave }) {
@@ -74,7 +65,9 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
           : preset.type === 'quadratic'
             ? 'QUADRATIC EQUATION'
           : preset.type === 'trigonometric'
-            ? (preset.waveType === 'classic'
+            ? preset.trigFunction
+              ? `${getTrigonometricFunctionName(preset.trigFunction).toUpperCase()} FUNCTION`
+              : (preset.waveType === 'classic'
                 ? 'CLASSIC WAVE'
                 : preset.waveType === 'multi'
                   ? 'MULTI-FREQUENCY'
@@ -90,7 +83,9 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
           : preset.type === 'quadratic'
             ? 'A curved graph with a vertical stretch and shift.'
           : preset.type === 'trigonometric'
-            ? (preset.waveType === 'classic'
+            ? preset.trigFunction
+              ? `The coefficient a scales the ${getTrigonometricFunctionName(preset.trigFunction).toLowerCase()} function, while b shifts it up or down.`
+              : (preset.waveType === 'classic'
                 ? 'Smooth repeating motion with a fixed ceiling and floor.'
                 : preset.waveType === 'multi'
                   ? 'A larger wave with smaller ripples mixed together.'
@@ -116,7 +111,9 @@ export default function EditPreset({ currentPreset, onBack, onSave }) {
             : preset.type === 'quadratic'
               ? 'EDIT QUADRATIC'
             : preset.type === 'trigonometric'
-              ? (preset.waveType === 'classic'
+              ? preset.trigFunction
+                ? `EDIT ${getTrigonometricFunctionName(preset.trigFunction).toUpperCase()}`
+                : (preset.waveType === 'classic'
                   ? 'EDIT CLASSIC WAVE'
                   : preset.waveType === 'multi'
                     ? 'EDIT MULTI-FREQUENCY'

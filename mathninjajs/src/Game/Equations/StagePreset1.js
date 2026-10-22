@@ -32,6 +32,7 @@ export const stage1Presets = [
   {
     id: 'quad-mix',
     type: 'quadratic',
+    formulaKind: 'quadratic-mix',
     label: 'y = ax² + bx',
     equation: 'y = x² + x',
     title: 'QUADRATIC MIX',
