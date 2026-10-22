@@ -5,12 +5,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   background: rgba(0, 0, 0, 0.5);
 }
 
 .settings-panel {
   width: min(100%, 440px);
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 36px;
   border: 2px solid #334761;
   border-radius: 18px;
@@ -129,6 +133,20 @@
 
 @media (max-width: 480px) {
   .settings-panel {
-    padding: 28px 22px;
+    padding: clamp(18px, 5vw, 28px) clamp(16px, 5vw, 22px);
+  }
+}
+
+@media (max-height: 700px) {
+  .settings-panel h2 {
+    margin-bottom: 20px;
+  }
+
+  .setting-item {
+    margin-bottom: 20px;
+  }
+
+  .setting-item p {
+    margin-top: 10px;
   }
 }
