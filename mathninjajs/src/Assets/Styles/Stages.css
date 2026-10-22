@@ -54,6 +54,28 @@
   margin: 0 0 12px;
 }
 
+.endless-presets-block .endless-equation-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.endless-equation-types li {
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 204, 51, 0.45);
+  border-radius: 999px;
+  color: #ffcc33;
+  font-weight: 700;
+}
+
+.endless-existing-presets-title {
+  margin: 0 0 12px;
+  font-size: 1rem;
+}
+
 .endless-presets-block ul {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

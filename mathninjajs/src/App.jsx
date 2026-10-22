@@ -392,6 +392,7 @@ function AppContent({ formulaUnlocks, setFormulaUnlocks }) {
         presets={presets}
         highScore={endlessHighScore}
         onBack={() => setScreen("stageSelect")}
+        onEditPreset={openEditPreset}
         onAddEquation={() => setScreen("selectEquationType")}
         onStart={() => handleContinue(true)}
       />

@@ -12,6 +12,8 @@ import Time from "../../../Assets/Images/Time.png";
 import Stars from "../../../Assets/Images/Stars.png";
 import Edit from "../../../Assets/Images/EditEquation.png";
 import MathNinjaLogo from "../../../Assets/Images/MathNinjaLogo.png";
+import Build from "../../../Assets/Images/BuildChallenge.png";
+import Endless from "../../../Assets/Images/EndlessPresetType.png";
 
 const SLIDES = [
     {
@@ -19,20 +21,27 @@ const SLIDES = [
         imageAlt: "Logus",
         title: "Welcome!",
         description: "Welcome to MathNinja Where you Slice • Solve • Master.",
-        accentColor: "  #f76a24",
+        accentColor: "  #f75524",
     },
     {
         imageSrc: Stages,
         imageAlt: "Stages",
         title: "Select a Stage",
-        description: "Progress through algebraic, trigonometric, logarithmic, and exponential equations across three stages.",
+        description: "Progress through algebraic, trigonometric, logarithmic, and exponential equations across three stages. Each stage will be unlocked after completing the previous stage. Completing all 3 stage will unlock the Endless Mode.",
         accentColor: " #f7b824",
+    },
+    {
+        imageSrc: Build,
+        imageAlt: "Build",
+        title: "Build Challenge",
+        description: "To enter a stage, you first have to build at least 4 preset equation with build challenge. In build Challenge, you have to match the target equation by using the choices provided and adjusting the A and B.",
+        accentColor: " #f56a19",
     },
     {
       imageSrc: Edit,
       imageAlt: "Edit",
       title: "Edit or Add Preset Equation",
-      description: "You can add or edit preset equations for you to use later.",
+      description: "Preset equations for you to use later. You can edit the equations from build challenge to fit your play style. In endless mode, you have more freedom of adding and editng preset equation for more convenient time.",
       accentColor:" #f7f024",
     },
     {
@@ -82,6 +91,13 @@ const SLIDES = [
       imageAlt: "Stars",
       title: "Stars",
       description: "Completing a stage will give you stars base on your performance. Each star represents: having more than 1 health, having at least 80% hit rate, and completing the stage within the designated time.",
+      accentColor: " #f724e6",
+    },
+    {
+      imageSrc: Endless,
+      imageAlt: "Endless",
+      title: "Endless Mode",
+      description: "The Endless mode uses a bit different mechanic compared to other stages. The mode utilizes all equation types from other stages. Hitting a fruit increases the time remaining while hitting a bomb decreases the time remaining.",
       accentColor: " #f724e6",
     },
     {

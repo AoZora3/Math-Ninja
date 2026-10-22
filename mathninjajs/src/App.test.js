@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import App from './App';
 import PresetCard from './Components/PresetCards.jsx';
 import Gameplay from './Screens/Gameplay/Gameplay.jsx';
+import EndlessMode from './Screens/EndlessMode/EndlessMode.jsx';
 import BuildChallenge from './Screens/BuildChallenge/BuildChallenge.jsx';
 import { GameContext } from './Context/GameContext.jsx';
 import Timer from './Components/Timer.jsx';
@@ -292,12 +293,14 @@ test('Endless displays unlocked equation types, supports adding types, and start
   fireEvent.click(screen.getByRole('button', { name: /endless mode/i }));
 
   expect(screen.getByRole('heading', { name: /endless formulas/i })).toBeInTheDocument();
-  expect(container.querySelectorAll('.endless-presets-block li')).toHaveLength(4);
-  expect(screen.getByText(/Linear\s*:/)).toBeInTheDocument();
-  expect(screen.getByText(/Quadratic\s*:/)).toBeInTheDocument();
-  expect(screen.getByText(/Sine\s*:/)).toBeInTheDocument();
-  expect(screen.getByText(/Exponential\s*:/)).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: /edit preset/i })).not.toBeInTheDocument();
+  expect(container.querySelectorAll('.endless-presets-block .preset-card')).toHaveLength(4);
+  expect(screen.getByRole('heading', { name: 'Linear' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Quadratic' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Sine' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Exponential' })).toBeInTheDocument();
+  expect(within(screen.getByRole('list', { name: 'Available equation types' })).getAllByRole('listitem').map((item) => item.textContent))
+    .toEqual(['Linear', 'Quadratic', 'Sine', 'Exponential', 'Cosine', 'Tangent', 'Secant', 'Cotangent', 'Cosecant']);
+  expect(screen.getAllByRole('button', { name: /edit preset/i })).toHaveLength(4);
 
   const trigOptions = [
     ['Sine (sin)', 'y = 1 sin(x) + 0'],
@@ -329,6 +332,56 @@ test('Endless displays unlocked equation types, supports adding types, and start
   expect(screen.getByLabelText('Time remaining 01:00')).toBeInTheDocument();
   expect(container.querySelectorAll('.hotbar-button')).toHaveLength(4);
   expect(screen.getByRole('button', { name: /linear y = 2x \+ 1/i })).toBeInTheDocument();
+});
+
+test('Endless lists each trigonometric preset after its equation type', () => {
+  const onEditPreset = jest.fn();
+  const { container } = render(
+    <EndlessMode
+      presets={stage2Presets}
+      onBack={jest.fn()}
+      onEditPreset={onEditPreset}
+      onAddEquation={jest.fn()}
+      onStart={jest.fn()}
+    />
+  );
+  const presetCards = container.querySelectorAll('.endless-presets-block .preset-card');
+
+  expect(within(screen.getByRole('list', { name: 'Available equation types' })).getAllByRole('listitem').map((item) => item.textContent))
+    .toEqual(['Sine', 'Cosine', 'Tangent', 'Secant', 'Cotangent', 'Cosecant']);
+  expect(screen.getByRole('heading', { name: 'Existing presets' })).toBeInTheDocument();
+  expect(presetCards).toHaveLength(stage2Presets.length);
+  expect(within(presetCards[0]).getByRole('heading', { name: 'Sine' })).toBeInTheDocument();
+  expect(within(presetCards[0]).getByRole('heading', { name: 'y = 1 sin(x) + 0' })).toBeInTheDocument();
+  expect(within(presetCards[0]).getByText('SINE SHIFT')).toBeInTheDocument();
+  expect(within(presetCards[1]).getByRole('heading', { name: 'y = sin(1x + 0)' })).toBeInTheDocument();
+  expect(within(presetCards[1]).getByText('SINE PHASE')).toBeInTheDocument();
+  expect(within(presetCards[2]).getByRole('heading', { name: 'Cosine' })).toBeInTheDocument();
+  expect(within(presetCards[2]).getByRole('heading', { name: 'y = 1 cos(x) + 0' })).toBeInTheDocument();
+  expect(within(presetCards[2]).getByText('COSINE SHIFT')).toBeInTheDocument();
+  expect(within(presetCards[3]).getByRole('heading', { name: 'y = 1 sin(x) + 0 cos(x)' })).toBeInTheDocument();
+  expect(within(presetCards[3]).getByText('SIN + COS MIX')).toBeInTheDocument();
+
+  fireEvent.click(within(presetCards[2]).getByRole('button', { name: /edit preset/i }));
+  expect(onEditPreset).toHaveBeenCalledWith(stage2Presets[2]);
+});
+
+test('Endless edits an existing preset and returns to the preset list after saving', () => {
+  const playSound = jest.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
+  unlockEndlessForTest({ linear1: true, 'sin-basic': true, 'exp-shift': true });
+  render(<App />);
+
+  fireEvent.click(screen.getByRole('button', { name: /start/i }));
+  fireEvent.click(screen.getByRole('button', { name: /endless mode/i }));
+  fireEvent.click(screen.getAllByRole('button', { name: /edit preset/i })[1]);
+
+  expect(screen.getByRole('heading', { name: 'EDIT SINE' })).toBeInTheDocument();
+  fireEvent.change(screen.getByRole('slider', { name: /a/i }), { target: { value: '2' } });
+  fireEvent.click(screen.getByRole('button', { name: /save preset/i }));
+
+  expect(screen.getByRole('heading', { name: /endless formulas/i })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'y = 2 sin(x) + 0' })).toBeInTheDocument();
+  playSound.mockRestore();
 });
 
 test('Endless fruit adds time and bombs remove time from the shorter timer', () => {

@@ -7,9 +7,7 @@ import {
 } from "../../Game/Equations/EquationText.js";
 import { getStage3Equation } from "../../Game/Equations/Stage3Equation.js";
 
-const getPresetGroup = (preset) => preset.type === "trigonometric"
-  ? `trigonometric-${getTrigonometricFunction(preset)}`
-  : preset.type;
+const TRIGONOMETRIC_FUNCTIONS = ["sin", "cos", "tan", "sec", "cot", "csc"];
 
 const getPresetName = (preset) => preset.type === "trigonometric"
   ? getTrigonometricFunctionName(getTrigonometricFunction(preset))
@@ -22,9 +20,11 @@ const getPresetEquation = (preset) => {
   return preset.equation || preset.label;
 };
 
-export default function EndlessMode({ presets, highScore = 0, onBack, onAddEquation, onStart }) {
-  const equationTypes = [...new Set(presets.map(getPresetGroup))]
-    .map((group) => presets.find((preset) => getPresetGroup(preset) === group));
+export default function EndlessMode({ presets, highScore = 0, onBack, onEditPreset, onAddEquation, onStart }) {
+  const equationTypes = [...new Set([
+    ...presets.map(getPresetName),
+    ...TRIGONOMETRIC_FUNCTIONS.map(getTrigonometricFunctionName)
+  ])];
 
   return (
     <div className="screen">
@@ -47,14 +47,28 @@ export default function EndlessMode({ presets, highScore = 0, onBack, onAddEquat
         <section className="endless-presets-block" aria-labelledby="endless-presets-title">
           <h2 id="endless-presets-title">Equation types in your hotbar</h2>
           <p>Choose a function during the run to switch curves.</p>
-          {equationTypes.length > 0 ? (
-            <ul>
-              {equationTypes.map((preset) => (
-                <li key={getPresetGroup(preset)}>
-                  <strong>{getPresetName(preset)}:</strong> {getPresetEquation(preset)}
-                </li>
-              ))}
-            </ul>
+          {presets.length > 0 ? (
+            <>
+              <ul className="endless-equation-types" aria-label="Available equation types">
+                {equationTypes.map((type) => <li key={type}>{type}</li>)}
+              </ul>
+              <h3 className="endless-existing-presets-title">Existing presets</h3>
+              <div className="preset-grid">
+                {presets.map((preset, index) => (
+                  <article className="preset-card" key={preset.id}>
+                    <div className="preset-content">
+                      <span className="preset-number">PRESET {index + 1}</span>
+                      <h3>{getPresetName(preset)}</h3>
+                      <h2>{getPresetEquation(preset)}</h2>
+                      <p>{preset.title}</p>
+                      <button type="button" className="select-button" onClick={() => onEditPreset?.(preset)}>
+                        Edit Preset
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
           ) : (
             <p>No equation types are unlocked yet.</p>
           )}
