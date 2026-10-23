@@ -1,0 +1,266 @@
+import React, { useEffect, useId, useMemo, useState } from 'react';
+import '../../Assets/Styles/BuildChallenge.css';
+
+const GRAPH_WIDTH = 320;
+const GRAPH_HEIGHT = 220;
+const PADDING = 18;
+const X_MIN = -5;
+const X_MAX = 5;
+const Y_MIN = -5;
+const Y_MAX = 5;
+
+function sampleCurve(fn, a, b) {
+  const points = [];
+
+  for (let x = X_MIN; x <= X_MAX; x += 0.15) {
+    const y = fn(x, a, b);
+    if (!Number.isFinite(y)) {
+      continue;
+    }
+
+    const normalizedX = ((x - X_MIN) / (X_MAX - X_MIN)) * (GRAPH_WIDTH - PADDING * 2) + PADDING;
+    const normalizedY = GRAPH_HEIGHT - PADDING - ((y - Y_MIN) / (Y_MAX - Y_MIN)) * (GRAPH_HEIGHT - PADDING * 2);
+    points.push({ x: normalizedX, y: normalizedY });
+  }
+
+  return points;
+}
+
+function buildLine(points) {
+  if (!points.length) return '';
+  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+}
+
+function formatCoefficient(value) {
+  return Number(value).toFixed(1).replace(/\.0$/, '');
+}
+
+function formatEquationText(text) {
+  return text
+    .replace(/\*/g, '·')
+    .replace(/\^2/g, '²')
+    .replace(/\^3/g, '³');
+}
+
+function shuffleOptions(options) {
+  const shuffled = [...options];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
+export default function BuildChallenge({ step, onBack, onComplete, onContinue }) {
+  const graphClipId = `challenge-plot-${useId().replace(/:/g, '')}`;
+  const [options] = useState(() => shuffleOptions(step?.options || []));
+  const [aValue, setAValue] = useState(0);
+  const [bValue, setBValue] = useState(0);
+  const [selectedOptionId, setSelectedOptionId] = useState(null);
+  const [isSolved, setIsSolved] = useState(false);
+
+  const targetCoefficients = step?.initialCoefficients || { a: 1, b: 0 };
+  const targetPoints = useMemo(
+    () => sampleCurve(step?.targetFn || (() => 0), targetCoefficients.a, targetCoefficients.b),
+    [step, targetCoefficients.a, targetCoefficients.b]
+  );
+  const selectedOption = options.find((option) => option.id === selectedOptionId);
+  const choiceColor = selectedOption ? (selectedOption.isCorrect ? '#34d399' : '#fca5a5') : '#34d399';
+  const previewPoints = useMemo(
+    () => (selectedOption ? sampleCurve(selectedOption.fn, aValue, bValue) : []),
+    [selectedOption, aValue, bValue]
+  );
+
+  const matchesTarget = Boolean(
+    selectedOption?.isCorrect &&
+    Math.abs(aValue - targetCoefficients.a) < 0.05 &&
+    Math.abs(bValue - targetCoefficients.b) < 0.05
+  );
+
+  const renderCoefficientText = (text, keyPrefix) => formatEquationText(text)
+    .split(/(\ba\b|\bb\b)/g)
+    .map((part, index) => {
+      if (part === 'a') {
+        return <span className="challenge-coefficient-a" key={`${keyPrefix}-a-${index}`}>{formatCoefficient(aValue)}</span>;
+      }
+      if (part === 'b') {
+        return <span className="challenge-coefficient-b" key={`${keyPrefix}-b-${index}`}>{formatCoefficient(bValue)}</span>;
+      }
+      return <React.Fragment key={`${keyPrefix}-text-${index}`}>{part}</React.Fragment>;
+    });
+
+  const renderChallengeEquation = () => formatEquationText(step.template)
+    .split(/(\[\s*\?\s*\]|\ba\b|\bb\b)/g)
+    .map((part, index) => {
+      if (/^\[\s*\?\s*\]$/.test(part)) {
+        return (
+          <React.Fragment key={`choice-${index}`}>
+            [
+            <span className="challenge-choice-value">
+              {selectedOption
+                ? renderCoefficientText(selectedOption.label, `choice-${index}`)
+                : '?'}
+            </span>
+            ]
+          </React.Fragment>
+        );
+      }
+      if (part === 'a' || part === 'b') {
+        return renderCoefficientText(part, `equation-${index}`);
+      }
+      return <React.Fragment key={`equation-text-${index}`}>{part}</React.Fragment>;
+    });
+
+  useEffect(() => {
+    if (!matchesTarget || isSolved || !step) return;
+    setIsSolved(true);
+    onComplete(step.unlockedPresetId);
+  }, [isSolved, matchesTarget, onComplete, step]);
+
+  const handleOptionClick = (option) => {
+    if (isSolved) {
+      return;
+    }
+
+    setSelectedOptionId(option.id);
+  };
+
+  if (!step) {
+    return null;
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#110f1d', color: '#f5f1ff', fontFamily: 'Arial, sans-serif' }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
+        <button type="button" onClick={onBack} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 26, cursor: 'pointer' }}>←</button>
+        <h2 style={{ margin: 0, fontSize: 20, letterSpacing: 1.5 }}>BUILD FORMULA</h2>
+        <div style={{ width: 30 }} />
+      </header>
+
+      <main style={{ display: 'flex', flexDirection: 'column', gap: 18, padding: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <span style={{ fontSize: 12, letterSpacing: 1.8, opacity: 0.7 }}>STEP {step.id}</span>
+          <h3 style={{ margin: 0, fontSize: 28 }}>Mathematical reasoning</h3>
+          <p style={{ margin: 0, fontSize: 16, opacity: 0.9 }}>{step.prompt}</p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, background: '#1b1730', borderRadius: 18, padding: 16, border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <strong className="challenge-equation">{renderChallengeEquation()}</strong>
+            <span style={{ fontSize: 12, opacity: 0.8 }}>Select an expression, then tune a and b to match the fixed target.</span>
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <span className="challenge-slider-value challenge-coefficient-a">a = {formatCoefficient(aValue)}</span>
+              <input aria-label="a" type="range" min={-3} max={3} step={0.1} value={aValue} onChange={(event) => setAValue(Number(event.target.value))} />
+            </label>
+            <label style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <span className="challenge-slider-value challenge-coefficient-b">b = {formatCoefficient(bValue)}</span>
+              <input aria-label="b" type="range" min={-3} max={3} step={0.1} value={bValue} onChange={(event) => setBValue(Number(event.target.value))} />
+            </label>
+          </div>
+
+          <div className="challenge-graph-container">
+            <svg viewBox={`0 0 ${GRAPH_WIDTH} ${GRAPH_HEIGHT}`} width="100%" height={220} className="challenge-graph" role="img" aria-label="Target and choice graph">
+              <defs>
+                <clipPath id={graphClipId}>
+                  <rect x={PADDING} y={PADDING} width={GRAPH_WIDTH - PADDING * 2} height={GRAPH_HEIGHT - PADDING * 2} />
+                </clipPath>
+              </defs>
+              <g className="challenge-grid">
+                {Array.from({ length: 11 }).map((_, index) => {
+                  const x = PADDING + (index / 10) * (GRAPH_WIDTH - PADDING * 2);
+                  const y = PADDING + (index / 10) * (GRAPH_HEIGHT - PADDING * 2);
+                  return (
+                    <g key={`grid-${index}`}>
+                      <line x1={x} y1={PADDING} x2={x} y2={GRAPH_HEIGHT - PADDING} />
+                      <line x1={PADDING} y1={y} x2={GRAPH_WIDTH - PADDING} y2={y} />
+                    </g>
+                  );
+                })}
+              </g>
+              <g className="challenge-axes">
+                <line x1={PADDING} y1={GRAPH_HEIGHT / 2} x2={GRAPH_WIDTH - PADDING} y2={GRAPH_HEIGHT / 2} />
+                <line x1={GRAPH_WIDTH / 2} y1={PADDING} x2={GRAPH_WIDTH / 2} y2={GRAPH_HEIGHT - PADDING} />
+              </g>
+              <g clipPath={`url(#${graphClipId})`}>
+                {targetPoints.length > 0 && (
+                  <path className="challenge-target-curve" d={buildLine(targetPoints)} fill="none" stroke="#7dd3fc" strokeWidth="2.5" />
+                )}
+                {previewPoints.length > 0 && (
+                  <path
+                    className="challenge-choice-curve"
+                    d={buildLine(previewPoints)}
+                    fill="none"
+                    stroke={choiceColor}
+                    strokeWidth="2.5"
+                  />
+                )}
+              </g>
+            </svg>
+            <div className="challenge-graph-legend" aria-label="Graph legend">
+              <span><i className="challenge-legend-target" />Target</span>
+              <span>
+                <i
+                  className="challenge-legend-choice"
+                  style={{ borderColor: choiceColor }}
+                />
+                Your choice
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {options.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => handleOptionClick(option)}
+              disabled={isSolved}
+              style={{
+                textAlign: 'left',
+                padding: '14px 16px',
+                borderRadius: 12,
+                border: selectedOptionId === option.id ? '2px solid #fff' : '1px solid rgba(255,255,255,0.18)',
+                background: selectedOptionId === option.id && isSolved ? '#103426' : '#211d37',
+                color: '#fff',
+                cursor: isSolved ? 'default' : 'pointer'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong>{formatEquationText(option.label)}</strong>
+                {selectedOptionId === option.id && isSolved && <span>✓</span>}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {selectedOption && (
+          <div style={{ padding: 12, borderRadius: 12, background: '#1f2937', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>
+              {isSolved ? 'Takeaway' : selectedOption.isCorrect ? 'Match the target' : 'Not quite.'}
+            </div>
+            <div style={{ opacity: 0.9 }}>
+              {isSolved
+                ? selectedOption.takeaway
+                : selectedOption.isCorrect
+                  ? `Adjust a to ${targetCoefficients.a} and b to ${targetCoefficients.b} to match the fixed target curve.`
+                  : selectedOption.explanation}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+          <button type="button" onClick={onBack} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 999, padding: '10px 16px', cursor: 'pointer' }}>Back</button>
+          {isSolved && (
+            <button type="button" onClick={onContinue} style={{ background: '#34d399', color: '#102017', border: 0, borderRadius: 999, padding: '10px 16px', fontWeight: 700, cursor: 'pointer' }}>
+              Continue
+            </button>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

@@ -26,7 +26,6 @@ The app source lives in `mathninjajs/src`. Run the app scripts from the `mathnin
       │   │   ├── Stage1Presets.jsx
       │   │   ├── Stage2Presets.jsx
       │   │   ├── Stage3Presets.jsx
-      │   │   ├── Stage4Presets.jsx
       │   │   └── EndlessPresets.jsx
       │   ├── graphRenderer.js             # sampling and coordinate conversion
       │   └── collision.js                 # equation-to-target collision checks
@@ -34,7 +33,6 @@ The app source lives in `mathninjajs/src`. Run the app scripts from the `mathnin
       │   └── routes.js                    # screen route definitions
       ├── screens/
       │   ├── EditPreset/                  # coefficient editing UI
-      │   ├── EquationList/                # stage preset lists
       │   ├── EquationTypeSelect/          # equation type selection
       │   ├── GameOver/                    # end-of-game statistics
       │   ├── Gameplay/                    # graph, hotbar, and gameplay controls

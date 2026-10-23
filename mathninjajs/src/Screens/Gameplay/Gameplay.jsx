@@ -4,8 +4,15 @@ import Combo from '../../Components/Combo.jsx';
 import Timer from '../../Components/Timer.jsx';
 import StageResult from '../StageResult/StageResult.jsx';
 import { GAME_DURATION_SECONDS, GOAL_SCORE } from '../../Context/GameContext.jsx';
-import { getTrigonometricEquation } from '../../Game/Equations/EquationText.js';
+import {
+  getEquationType,
+  getPolynomialEquation,
+  getTrigonometricEquation,
+  getTrigonometricFunction,
+  getTrigonometricFunctionName
+} from '../../Game/Equations/EquationText.js';
 import { getStage3Equation } from '../../Game/Equations/Stage3Equation.js';
+import { BUILD_CHALLENGE_STEPS } from '../../Game/Equations/BuildChallengeData.js';
 import appleSprite from '../../Assets/Sprites/Apple_Sprite.png';
 import appleSlicedSprite from '../../Assets/Sprites/Apple_Sliced_Sprite.png';
 import bombExplosionSprite from '../../Assets/Sprites/Bomb_Explosion_Sprite.png';
@@ -13,28 +20,31 @@ import bombSprite from '../../Assets/Sprites/Bomb_Sprite.png';
 import AppleRain from './AppleRain.jsx';
 import '../../Assets/Styles/Gameplay.css';
 
-const POLYNOMIAL_TYPE_CYCLE = ['linear', 'quadratic', 'cubic'];
+const CHALLENGE_PRESET_IDS = new Set(BUILD_CHALLENGE_STEPS.map((step) => step.unlockedPresetId));
+const EQUATION_TYPE_LABELS = {
+  linear: 'Linear',
+  quadratic: 'Quadratic',
+  cubic: 'Cubic',
+  trigonometric: 'Trigonometric',
+  exponential: 'Exponential',
+  logarithmic: 'Logarithmic'
+};
 
 function getEquationText(preset) {
   if (!preset) return 'y = 0';
   const { a = 0, b = 0, h = 0, k = 0, l = 1 } = preset.coefficients || {};
   const inversePrefix = preset.inverse ? '-' : '';
 
-  if (preset.type === 'quadratic') {
-    return `y = ${a}x² ${b < 0 ? '-' : '+'} ${Math.abs(b)}`;
-  }
-
-  // Render cubic presets with the same coefficients used by their graph function.
-  if (preset.type === 'cubic') {
-    return `y = ${a}x³ ${b < 0 ? '-' : '+'} ${Math.abs(b)}`;
-  }
-
   if (preset.type === 'trigonometric') {
     return getTrigonometricEquation(preset);
   }
 
-  if (preset.type === 'exponential' && preset.inverseFn) {
+  if ((preset.type === 'exponential' && preset.inverseFn) || preset.type === 'logarithmic') {
     return getStage3Equation(preset, Boolean(preset.inverse));
+  }
+
+  if (['linear', 'quadratic', 'cubic'].includes(preset.type)) {
+    return getPolynomialEquation(preset);
   }
 
   if (preset.type === 'exponential') {
@@ -49,7 +59,7 @@ function getEquationText(preset) {
     return `y = ${inversePrefix}${a}e^(-${b}(x - ${h})) + ${k}`;
   }
 
-  return `y = ${a}x ${b < 0 ? '-' : '+'} ${Math.abs(b)}`;
+  return preset.equation || 'y = 0';
 }
 
 function buildCurvePoints(preset, width = 320, height = 260) {
@@ -70,11 +80,15 @@ function buildCurvePoints(preset, width = 320, height = 260) {
 export default function Gameplay({ onBack, onWin }) {
   const {
     presets,
+    formulaUnlocks = {},
     activePreset,
     setActivePreset,
     score,
     lives,
     timeLeft,
+    elapsedTime,
+    isEndless,
+    endlessHighScore = 0,
     isPaused,
     setIsPaused,
     hitRate,
@@ -86,7 +100,11 @@ export default function Gameplay({ onBack, onWin }) {
     handleCoefficientSlider
   } = useContext(GameContext);
 
-  const [selectedPresetId, setSelectedPresetId] = useState(activePreset?.id || presets[0]?.id || null);
+  const availablePresets = useMemo(
+    () => presets.filter((preset) => !CHALLENGE_PRESET_IDS.has(preset.id) || formulaUnlocks[preset.id]),
+    [presets, formulaUnlocks]
+  );
+  const [selectedPresetId, setSelectedPresetId] = useState(activePreset?.id || availablePresets[0]?.id || null);
   const [firedEquation, setFiredEquation] = useState(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(true);
   const [isInverted, setIsInverted] = useState(false);
@@ -94,7 +112,11 @@ export default function Gameplay({ onBack, onWin }) {
   const [slicedFruitObjects, setSlicedFruitObjects] = useState([]);
   const [explodedBombObjects, setExplodedBombObjects] = useState([]);
   const slicedFruitTimeouts = useRef(new Set());
-  const resultState = lives <= 0 || timeLeft <= 0 ? 'lost' : score >= GOAL_SCORE ? 'won' : null;
+  const resultState = lives <= 0 || timeLeft <= 0
+    ? 'lost'
+    : !isEndless && score >= GOAL_SCORE
+      ? 'won'
+      : null;
 
   // Notify progression once per successful run, including after a retry.
   useEffect(() => {
@@ -105,9 +127,13 @@ export default function Gameplay({ onBack, onWin }) {
 
     if (!winHandled.current) {
       winHandled.current = true;
-      onWin?.();
+      onWin?.({
+        lives,
+        hitRate,
+        elapsedSeconds: isEndless ? elapsedTime : GAME_DURATION_SECONDS - timeLeft
+      });
     }
-  }, [resultState, onWin]);
+  }, [elapsedTime, hitRate, isEndless, lives, onWin, resultState, timeLeft]);
 
   // Clear temporary slice/explosion timers when Gameplay unmounts.
   useEffect(() => () => {
@@ -125,15 +151,17 @@ export default function Gameplay({ onBack, onWin }) {
   }, [firedEquation]);
 
   useEffect(() => {
-    if (!selectedPresetId && presets[0]) {
-      setSelectedPresetId(presets[0].id);
+    if (!availablePresets.some((preset) => preset.id === selectedPresetId)) {
+      setSelectedPresetId(availablePresets[0]?.id || null);
     }
-  }, [presets, selectedPresetId]);
+  }, [availablePresets, selectedPresetId]);
 
   const activeWeapon = useMemo(() => {
-    const current = presets.find((preset) => preset.id === selectedPresetId) || activePreset || presets[0];
+    const current = availablePresets.find((preset) => preset.id === selectedPresetId) ||
+      availablePresets.find((preset) => preset.id === activePreset?.id) ||
+      availablePresets[0];
     return current || null;
-  }, [presets, selectedPresetId, activePreset]);
+  }, [availablePresets, selectedPresetId, activePreset]);
 
   const effectiveWeapon = useMemo(() => {
     if (!activeWeapon || activeWeapon.type !== 'exponential') {
@@ -205,46 +233,45 @@ export default function Gameplay({ onBack, onWin }) {
     setIsPreviewVisible(true);
   };
 
-  const switchEquationType = () => {
-    const availableTypes = POLYNOMIAL_TYPE_CYCLE.filter((type) =>
-      presets.some((preset) => preset.type === type)
-    );
-    if (availableTypes.length < 2) return;
+  const switchEquation = () => {
+    if (availablePresets.length < 2) return;
 
-    const currentIndex = availableTypes.indexOf(activeWeapon?.type);
-    const nextType = availableTypes[(currentIndex + 1) % availableTypes.length];
-    const nextPreset = presets.find((preset) => preset.type === nextType);
+    const currentIndex = availablePresets.findIndex((preset) => preset.id === activeWeapon?.id);
+    const nextPreset = availablePresets[(currentIndex + 1) % availablePresets.length];
     if (nextPreset) handlePreviewEquation(nextPreset);
   };
 
-  const availablePolynomialTypes = POLYNOMIAL_TYPE_CYCLE.filter((type) =>
-    presets.some((preset) => preset.type === type)
-  );
-  const nextPolynomialType = availablePolynomialTypes[
-    (availablePolynomialTypes.indexOf(activeWeapon?.type) + 1) % availablePolynomialTypes.length
-  ];
+  const getHotbarGroup = (preset) => preset.type === 'trigonometric'
+    ? `trigonometric-${getTrigonometricFunction(preset)}`
+    : preset.type;
 
-  const handleRetry = () => {
-    startGameplay();
-    setSelectedPresetId((activePreset?.id || presets[0]?.id) || null);
+  const endlessHotbarPresets = isEndless
+    ? [...new Set(availablePresets.map(getHotbarGroup))].map((group) => (
+      availablePresets.find((preset) => getHotbarGroup(preset) === group && preset.id === activeWeapon?.id) ||
+      availablePresets.find((preset) => getHotbarGroup(preset) === group)
+    ))
+    : availablePresets;
+
+  const selectHotbarPreset = (preset) => {
+    if (!isEndless) {
+      handlePreviewEquation(preset);
+      return;
+    }
+
+    const group = getHotbarGroup(preset);
+    const typePresets = availablePresets.filter((item) => getHotbarGroup(item) === group);
+    const currentIndex = typePresets.findIndex((item) => item.id === activeWeapon?.id);
+    const nextPreset = typePresets[(currentIndex + 1) % typePresets.length] || preset;
+    handlePreviewEquation(nextPreset);
   };
 
-  const liveCurvePoints = buildCurvePoints(effectiveWeapon || activeWeapon || presets[0], 320, 260);
-  const firedCurvePoints = buildCurvePoints(firedEquation?.preset, 320, 260);
+  const handleRetry = () => {
+    startGameplay(isEndless);
+    setSelectedPresetId(availablePresets.find((preset) => preset.id === activePreset?.id)?.id || availablePresets[0]?.id || null);
+  };
 
-  if (resultState) {
-    return (
-      <StageResult
-        won={resultState === 'won'}
-        score={score}
-        lives={lives}
-        hitRate={hitRate}
-        elapsedSeconds={GAME_DURATION_SECONDS - timeLeft}
-        onRetry={handleRetry}
-        onBack={onBack}
-      />
-    );
-  }
+  const liveCurvePoints = buildCurvePoints(effectiveWeapon || activeWeapon || availablePresets[0], 320, 260);
+  const firedCurvePoints = buildCurvePoints(firedEquation?.preset, 320, 260);
 
   return (
     <div className="gameplay-shell">
@@ -264,25 +291,28 @@ export default function Gameplay({ onBack, onWin }) {
       <AppleRain />
       <header className="gameplay-topbar">
         <div className="score-block">
-          <span className="hud-label">SCORE</span>
-          <strong>{score}/{GOAL_SCORE}</strong>
+          <span className="hud-label">{isEndless ? 'ENDLESS SCORE' : 'SCORE'}</span>
+          <strong>{isEndless ? score : `${score}/${GOAL_SCORE}`}</strong>
+          {isEndless && <span className="hud-best-score">BEST {endlessHighScore}</span>}
         </div>
 
         <div className="gameplay-metrics">
           <Timer mode="countdown" seconds={timeLeft} />
-          <Timer mode="countup" seconds={GAME_DURATION_SECONDS - timeLeft} />
+          <Timer mode="countup" seconds={isEndless ? elapsedTime : GAME_DURATION_SECONDS - timeLeft} />
           <Combo multiplier={comboMultiplier} streak={streak} />
         </div>
 
-        <div className="health-block" aria-label="Health">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <span
-              key={index}
-              className={`health-icon ${index < lives ? 'filled' : 'empty'}`}
-              aria-hidden="true"
-            />
-          ))}
-        </div>
+        {!isEndless && (
+          <div className="health-block" aria-label="Health">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <span
+                key={index}
+                className={`health-icon ${index < lives ? 'filled' : 'empty'}`}
+                aria-hidden="true"
+              />
+            ))}
+          </div>
+        )}
 
         <button type="button" className="back-small-btn" onClick={() => setIsPaused(true)}>
           Pause
@@ -382,7 +412,11 @@ export default function Gameplay({ onBack, onWin }) {
       <section className="equation-controls" aria-label="Equation controls">
         <div className="control-heading">
           <div className="live-equation">
-            <span className="hud-label">LIVE EQUATION: </span>
+            <span className="hud-label">
+              {isInverted && activeWeapon?.type === 'exponential'
+                ? 'LOGARITHMIC EQUATION: '
+                : `${(EQUATION_TYPE_LABELS[getEquationType(activeWeapon)] || 'Equation')} EQUATION: `}
+            </span>
             <h2>{getEquationText(effectiveWeapon || activeWeapon)}</h2>
           </div>
         </div>
@@ -407,13 +441,14 @@ export default function Gameplay({ onBack, onWin }) {
           })}
         </div>
         <div className="equation-action-row">
-          {activeWeapon?.type === 'exponential' ? (
+          {activeWeapon?.type === 'exponential' && (
             <button type="button" className="type-switch" onClick={() => setIsInverted((prev) => !prev)}>
-              {isInverted ? 'Use normal curve' : 'Invert curve'}
+              {isInverted ? 'Show exponential' : 'Show inverse log'}
             </button>
-          ) : (
-            <button type="button" className="type-switch" onClick={switchEquationType}>
-              Switch to {activeWeapon?.type === 'linear' ? 'quadratic' : 'linear'}
+          )}
+          {availablePresets.length > 1 && (
+            <button type="button" className="type-switch" onClick={switchEquation}>
+              Switch equation
             </button>
           )}
 
@@ -430,12 +465,17 @@ export default function Gameplay({ onBack, onWin }) {
         </div>
 
         <div className="hotbar-grid">
-          {presets.map((preset) => {
-            const isSelected = preset.id === selectedPresetId;
+          {endlessHotbarPresets.map((preset) => {
+            const isSelected = isEndless
+              ? getHotbarGroup(preset) === getHotbarGroup(activeWeapon || {})
+              : preset.id === selectedPresetId;
+            const presetType = preset.type === 'trigonometric'
+              ? getTrigonometricFunctionName(getTrigonometricFunction(preset))
+              : EQUATION_TYPE_LABELS[getEquationType(preset)] || getEquationType(preset);
             return (
               <div className={`hotbar-entry ${isSelected ? 'selected' : ''}`} key={preset.id}>
-                <button type="button" className="hotbar-button" onClick={() => handlePreviewEquation(preset)}>
-                  <span>{preset.type}</span>
+                <button type="button" className="hotbar-button" onClick={() => selectHotbarPreset(preset)}>
+                  <span>{presetType}</span>
                   {getEquationText(preset)}
                 </button>
               </div>
@@ -444,6 +484,19 @@ export default function Gameplay({ onBack, onWin }) {
         </div>
       </section>
 
+      {resultState && (
+        <StageResult
+          won={resultState === 'won'}
+          score={score}
+          lives={lives}
+          hitRate={hitRate}
+          elapsedSeconds={isEndless ? elapsedTime : GAME_DURATION_SECONDS - timeLeft}
+          isEndless={isEndless}
+          highScore={endlessHighScore}
+          onRetry={handleRetry}
+          onBack={onBack}
+        />
+      )}
     </div>
   );
 }

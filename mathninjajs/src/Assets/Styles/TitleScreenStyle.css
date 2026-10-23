@@ -1,17 +1,69 @@
+.splash-screen {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  gap: clamp(12px, 3vh, 28px);
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+}
+
+.Logo-Image {
+  width: min(78vw, 420px);
+  max-height: 40vh;
+}
+
+.ninja-Logo {
+  display: block;
+  width: 100%;
+  max-height: 40vh;
+  object-fit: contain;
+}
+
+.splash-screen .tagline {
+  margin: 0;
+  font-size: clamp(14px, 4vw, 20px);
+}
+
+.splash-screen .start-button {
+  padding: clamp(12px, 3vh, 17px) clamp(40px, 16vw, 70px);
+  font-size: clamp(18px, 5vw, 22px);
+}
+
 .settings-button {
-  padding: 17px 25px;
+  padding: clamp(12px, 3vh, 17px) clamp(20px, 7vw, 25px);
   border: none;
   border-radius: 14px;
   background: #68655d;
   color: #101827;
-  font-size: 22px;
+  font-size: clamp(16px, 4.5vw, 22px);
   font-weight: 900;
   box-shadow: 0 6px 0 #7b7b7b;
   transition: 0.15s;
-  margin-top: 20px;
 }
+
 .settings-button:hover { transform: translateY(-3px); }
 .settings-button:active {
   transform: translateY(3px);
   box-shadow: 0 2px 0 #c49300;
+}
+
+.splash-screen .version {
+  bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+@media (max-height: 560px) {
+  .splash-screen {
+    gap: 8px;
+  }
+
+  .Logo-Image,
+  .ninja-Logo {
+    max-height: 32vh;
+  }
+
+  .splash-screen .version {
+    display: none;
+  }
 }

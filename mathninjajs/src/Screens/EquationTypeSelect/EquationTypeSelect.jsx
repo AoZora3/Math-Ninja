@@ -5,6 +5,12 @@ export default function EquationTypeSelect({ onSelectType, onBack, allowedTypes 
     cubic: 'Cubic',
     linear: 'Linear',
     trigonometric: 'Trigonometric',
+    'trig-sin': 'Sine (sin)',
+    'trig-cos': 'Cosine (cos)',
+    'trig-tan': 'Tangent (tan)',
+    'trig-sec': 'Secant (sec)',
+    'trig-cot': 'Cotangent (cot)',
+    'trig-csc': 'Cosecant (csc)',
     logarithmic: 'Logarithmic',
     exponential: 'Exponential'
   };

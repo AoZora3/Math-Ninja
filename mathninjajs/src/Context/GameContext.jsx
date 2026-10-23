@@ -8,25 +8,37 @@ import clickSound from '../Assets/SoundEffects/Click.mp3';
 import presetSelectSound from '../Assets/SoundEffects/PresetSelect.mp3';
 import sliceHitSound from '../Assets/SoundEffects/SliceHit.mp3';
 import sliceMissSound from '../Assets/SoundEffects/SliceMiss.mp3';
+import { storage } from '../Utils/storage.js';
 
 
 export const GameContext = createContext(null);
 export const GAME_DURATION_SECONDS = 180;
+export const ENDLESS_DURATION_SECONDS = 60;
 export const GOAL_SCORE = 100;
+const ENDLESS_HIGH_SCORE_KEY = 'mathNinjaEndlessHighScore';
 
 const MAX_OBJECTS_PER_TYPE = 6; // Limit active fruit and bombs independently.
 const OBJECT_LIFETIME_MS = 5000; // Despawn each object after five seconds.
 const DESPAWN_CHECK_INTERVAL_MS = 250; // Check often so expiry stays close to five seconds.
+const FORMULA_SCORE_BASE = 1;
+const FORMULA_SCORE_STEP = 0.25;
+const ENDLESS_TIME_PER_FRUIT_SECONDS = 5;
+const ENDLESS_TIME_PER_BOMB_SECONDS = 5;
 
 // Apply the independent SFX setting to each one-shot audio player.
-function playSoundEffect(sound, volume) {
+function playSoundEffect(sound, volume, gain = 1) {
   const audio = new Audio(sound);
-  audio.volume = volume / 100;
+  audio.volume = Math.min(1, (volume / 100) * gain);
   const playback = audio.play();
   playback?.catch(() => {});
 }
 
-export function GameProvider({ children }) {
+function readEndlessHighScore() {
+  const savedScore = Number(storage.getItem(ENDLESS_HIGH_SCORE_KEY, '0'));
+  return Number.isFinite(savedScore) && savedScore >= 0 ? savedScore : 0;
+}
+
+export function GameProvider({ children, formulaUnlocks = {}, setFormulaUnlocks = () => {} }) {
   const [presets, setPresets] = useState(stage1Presets);
   const [activePreset, setActivePreset] = useState(stage1Presets[0]);
   const [currentScreen, setCurrentScreen] = useState('splash');
@@ -41,6 +53,8 @@ export function GameProvider({ children }) {
   const [equationStats, setEquationStats] = useState({ attempts: 0, hits: 0 });
   const [spawnedObjects, setSpawnedObjects] = useState([]);
   const [highScore, setHighScore] = useState(0);
+  const [endlessHighScore, setEndlessHighScore] = useState(readEndlessHighScore);
+  const endlessHighScoreRef = useRef(endlessHighScore);
   const [musicVolume, setMusicVolume] = useState(67); // default volume level for background music
   const [sfxVolume, setSfxVolume] = useState(67);     // default volume level for sound effects
   const [musicStarted, setMusicStarted] = useState(false);
@@ -109,16 +123,24 @@ export function GameProvider({ children }) {
   }
 
   function startGameplay(modeIsEndless = false) {
+    setIsEndless(modeIsEndless);
     setIsPaused(false);
     setScore(0);
     scoreRef.current = 0;
     setLives(3);
     setComboMultiplier(1);
     setStreak(0);
-    setTimeLeft(GAME_DURATION_SECONDS);
+    setTimeLeft(modeIsEndless ? ENDLESS_DURATION_SECONDS : GAME_DURATION_SECONDS);
+    setElapsedTime(0);
     setEquationStats({ attempts: 0, hits: 0 });
     setSpawnedObjects([]);
     setCurrentScreen('gameplay');
+  }
+
+  function resetEndlessHighScore() {
+    endlessHighScoreRef.current = 0;
+    setEndlessHighScore(0);
+    storage.removeItem(ENDLESS_HIGH_SCORE_KEY);
   }
 
   async function sendScoreToBackend(finalScore) {
@@ -159,14 +181,12 @@ export function GameProvider({ children }) {
           clearInterval(clockTimer);
           const finalScore = scoreRef.current;
           sendScoreToBackend(finalScore);
-          setCurrentScreen(finalScore >= GOAL_SCORE ? 'stageComplete' : 'gameOver');
+          setCurrentScreen(!isEndless && finalScore >= GOAL_SCORE ? 'stageComplete' : 'gameOver');
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-
-    const spawnInterval = isEndless ? Math.max(500, 1500 - elapsedTime * 10) : 1500;
 
     const spawnerTimer = setInterval(() => {
       const isBomb = Math.random() < 0.25;
@@ -193,7 +213,17 @@ export function GameProvider({ children }) {
       clearInterval(spawnerTimer);
       clearInterval(despawnTimer); // Stop despawn checks when gameplay ends.
     };
-  }, [currentScreen, isEndless, elapsedTime, isPaused]);
+  }, [currentScreen, isEndless, isPaused]);
+
+  useEffect(() => {
+    if (currentScreen !== 'gameplay' || isPaused) return;
+
+    const elapsedTimer = setInterval(() => setElapsedTime((previous) => previous + 1), 1000);
+    return () => clearInterval(elapsedTimer);
+  }, [currentScreen, isPaused]);
+
+  const unlockedFormulaCount = Math.max(1, presets.length);
+  const formulaMultiplier = FORMULA_SCORE_BASE + Math.max(0, unlockedFormulaCount - 1) * FORMULA_SCORE_STEP;
 
   // Fire Equation
   function fireEquationStrike(selectedPreset = activePreset) {
@@ -236,23 +266,40 @@ export function GameProvider({ children }) {
     }
 
     if (fruitHits > 0) playSoundEffect(sliceHitSound, sfxVolume);
-    if (lifeChange > 0) playSoundEffect(bombSound, sfxVolume);
+    if (lifeChange > 0) playSoundEffect(bombSound, sfxVolume, 1.25);
     if (fruitHits === 0 && lifeChange === 0) playSoundEffect(sliceMissSound, sfxVolume);
 
-    const awardedScore = scoreChange * comboMultiplier;
+    const awardedScore = scoreChange * comboMultiplier * formulaMultiplier;
     if (awardedScore > 0) {
-      setScore(prev => {
-        const nextScore = prev + awardedScore;
-        scoreRef.current = nextScore;
-        if (nextScore >= GOAL_SCORE) {
-          sendScoreToBackend(nextScore);
-          setCurrentScreen('stageComplete');
-        }
-        return nextScore;
-      });
+      const nextScore = scoreRef.current + awardedScore;
+      scoreRef.current = nextScore;
+      setScore(nextScore);
+      if (isEndless && nextScore > endlessHighScoreRef.current) {
+        endlessHighScoreRef.current = nextScore;
+        setEndlessHighScore(nextScore);
+        storage.setItem(ENDLESS_HIGH_SCORE_KEY, String(nextScore));
+      }
+
+      if (!isEndless && nextScore >= GOAL_SCORE) {
+        sendScoreToBackend(nextScore);
+        setCurrentScreen('stageComplete');
+      }
     }
 
-    if (lifeChange > 0) {
+    if (isEndless && fruitHits > 0) {
+      setTimeLeft((previous) => previous + fruitHits * ENDLESS_TIME_PER_FRUIT_SECONDS);
+    }
+
+    if (isEndless && lifeChange > 0) {
+      setTimeLeft((previous) => {
+        const nextTime = Math.max(0, previous - lifeChange * ENDLESS_TIME_PER_BOMB_SECONDS);
+        if (nextTime === 0) {
+          sendScoreToBackend(scoreRef.current);
+          setCurrentScreen('gameOver');
+        }
+        return nextTime;
+      });
+    } else if (lifeChange > 0) {
       setLives(prev => {
         const nextLives = prev - lifeChange;
         if (nextLives <= 0) {
@@ -286,6 +333,8 @@ export function GameProvider({ children }) {
       streak,
       spawnedObjects,
       highScore,
+      endlessHighScore,
+      resetEndlessHighScore,
       musicVolume,
       setMusicVolume,
       sfxVolume,
@@ -300,7 +349,11 @@ export function GameProvider({ children }) {
       difficultyTier,
       setDifficultyTier,
       elapsedTime,
-      registerMiss
+      registerMiss,
+      formulaMultiplier,
+      unlockedFormulaCount,
+      formulaUnlocks,
+      setFormulaUnlocks
     }}>
       {children}
       <audio

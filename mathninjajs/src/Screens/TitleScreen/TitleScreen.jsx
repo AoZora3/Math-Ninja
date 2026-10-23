@@ -1,17 +1,13 @@
 import Settings from "../../Game/Settings/Settings.jsx";
 import "../../Assets/Styles/TitleScreenStyle.css"
+import logo from "../../Assets/Images/MathNinjaLogo.png"
 
 function TitleScreen({ onStart, screen, setScreen, musicVolume, onMusicVolumeChange, sfxVolume, onSfxVolumeChange, onResetProgress, onUnlockAllStages }) {
   return (
       <div className={`screen splash-screen ${screen === "splash" ? "active" : ""}`}>
 
-        <div className="logo-container">
-          <h1 className="math-title">MATH</h1>
-          <h1 className="ninja-title">NINJA</h1>
-        </div>
-
-        <div className="ninja-character">
-          🥷
+        <div className="Logo-Image">
+          <img className="ninja-Logo" src={logo} alt="Logo" />
         </div>
 
         <p className="tagline">
